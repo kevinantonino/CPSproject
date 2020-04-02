@@ -21,14 +21,12 @@ def fun1(house,data,axis): # Yo caleb if you want to change the variable names t
 
     if axis = 'day':
          groupDay = houseData.groupby(houseData['time'].dt.dayofyear)[data].sum()
-         groupDay = pd.DataFrame(groupDay)
+         groupDay = pd.DataFrame(groupDay) # so I tried 100 ways to get this to work but what got me further was first initializing an null dataframe column and appyling the to datetime function to make the whole column the datetime type so i can pass in new datetime info in replacement if these null values. 
          groupDay['day'] = np.zeros([len(groupDay),1])
          groupDay['day'] = pd.to_datetime(groupDay['day'])
          
-            for a in houseDay.index:
-              groupDay.at[a,'day'] = houseData[houseData['time'].dt.dayofyear == a].head(1)['time'].dt.date #no idea how this cant work spent almost 4 hours today trying to get the group Day array to have complete timeseries instead of the day of year index 
-
-
+            for a in groupDay.index:
+                groupDay.at[a,'day'] = houseData[houseData['time'].dt.dayofyear == a].at[houseData[houseData['time'].dt.dayofyear == a].index[1],"time"] # we need to find another way to do this this was such a pain in the ass. The purpose of this line of code is to attatch the old timestamps which were deleted by the groupby operation to the original data frame so we can plot it right out of the function. im done for today. I can explain all of this, especially this line. 
 
 
 

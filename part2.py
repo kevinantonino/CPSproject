@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as mp
 
-allData = pd.read_csv("15min_EV_PV_homes_only.csv") # Load all the data
+allData = pd.read_csv("C:/Users/Caleb/Desktop/Poolla Lab/Data/15min_all_homes_data.csv") # Load all the data
 filterData = allData[["car1","grid","solar","local_15min","dataid","state"]] # cutting down for the sake of runtime
 filterData = filterData.rename(columns={"local_15min":"time"}) 
 filterData["time"] = pd.to_datetime(filterData["time"]) # change to appropriate data type
@@ -51,6 +51,8 @@ def fun(house,daterange,weekdays,data,xaxis):
     return houseData
 
 
+aa=fun(661,['2018-05-01','2018-05-02'],[],'grid','hour')
 
+aa.head(5)
 
 

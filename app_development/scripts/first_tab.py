@@ -50,16 +50,16 @@ def first_tab_create(filterData):
             houseData = houseData.drop(columns="time")
 
         if xaxis == 'Hour':
-            houseData = houseData.resample('1h').sum()
+            houseData = houseData.resample('1h').mean()
 
         if xaxis == 'Day':
-            houseData = houseData.resample('1d').sum()
+            houseData = houseData.resample('1d').mean()
 
         if xaxis == 'Week':
-            houseData = houseData.resample('1w').sum()
+            houseData = houseData.resample('1w').mean()
 
         if xaxis == 'Month':
-            houseData = houseData.resample('1m').sum()
+            houseData = houseData.resample('1m').mean()
         # if none of these, 15 Minutes is implied and passed through
         return ColumnDataSource(houseData)
 
@@ -75,7 +75,7 @@ def first_tab_create(filterData):
     #             houseData = houseData[houseData['time'].dt.dayofweek != i] # cut out days we dont want
 
     #         if xaxis == 'avgday':
-    #             houseData = houseData.resample('1d').sum()
+    #             houseData = houseData.resample('1d').sum() ####chjange to mean
     #             houseData['time'] = houseData.index
     #             houseData = houseData.groupby(houseData['time'].dt.dayofweek)[data].mean()
     #             houseData.index = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']

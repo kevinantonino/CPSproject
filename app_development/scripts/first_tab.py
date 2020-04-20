@@ -11,7 +11,7 @@ from bokeh.io import show
 from bokeh.plotting import figure
 
 from bokeh.models import CategoricalColorMapper, HoverTool, ColumnDataSource, Panel
-from bokeh.models.widgets import CheckboxGroup, Slider, RangeSlider, Tabs, TableColumn, DataTable, RadioGroup
+from bokeh.models.widgets import CheckboxGroup, Slider, RangeSlider, Tabs, TableColumn, DataTable, RadioGroup, Dropdown
 from bokeh.models.widgets import (CheckboxGroup, Slider, RangeSlider,
 								  Tabs, CheckboxButtonGroup,
 								  TableColumn, DataTable, Select)
@@ -46,9 +46,11 @@ def first_tab_create(filterData):
         houseData = houseData.loc[daterange[0]:daterange[1], :]  # cut to the days requested
 
         # Now we get into the xaxis user options #
+        if xaxis == '15 Minutes':
+            houseData = houseData.drop(columns="time")
 
         if xaxis == 'Hour':
-            houseData = houseData.resample('1h').mean()
+            houseData = houseData.resample('1h').sum()
 
         if xaxis == 'Day':
             houseData = houseData.resample('1d').sum()
@@ -131,6 +133,12 @@ def first_tab_create(filterData):
     granularity_1.on_change('active',
                             update)  # not sure exactly how this works but runs update on the change of the button and passes through the value of the button
 
+    home_ids_available = np.unique(filterData['dataid'])
+    home_ids_available= list(map(str, home_ids_available))
+    home_id_selector = Dropdown(label="Home ID to Plot", button_type="warning", menu=home_ids_available)
+
+    home_id_selector.on_change('value', update)
+
     ############ Initialize opening plot and data
     src1 = plot1_data(27, ['2019-05-01', '2019-08-20'], 'grid', 'Day')  # start with a data range we know is correct
     plot1 = plot1_plot(src1)
@@ -138,7 +146,7 @@ def first_tab_create(filterData):
     ##### Formatting of the app screen
 
     # Put controls in a single element (add more later to format)
-    controls = WidgetBox(granularity_1)
+    controls = WidgetBox(granularity_1,home_id_selector)
 
     # Create a row layout
     layout = row(controls, plot1)

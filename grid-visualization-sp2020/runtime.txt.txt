@@ -1,3 +1,1 @@
-web: bokeh serve --port=$PORT
---allow-websocket-origin=grid-visualization-sp2020.herokuapp.com --address=0.0.0.0 
---use-xheaders grid-visualization-sp2020
+python-3.7.6

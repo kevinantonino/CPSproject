@@ -35,6 +35,7 @@ def first_tab_create(filterData):
     dummy_home_id = 27
     dummy_data_type = 'car1'
     dummy_granularity = '15 Minutes'
+    dummy_analysis = 'avghour'
 
     def plot1_data(house, daterange=dummy_daterange, data=dummy_data_type, xaxis=dummy_granularity):
 
@@ -72,7 +73,7 @@ def first_tab_create(filterData):
         return ColumnDataSource(houseData)
 
 
-    def plot2_data(house,daterange=dummy_daterange,weekdays = [],data=dummy_data_type,xaxis=dummy_granularity):
+    def plot2_data(house,daterange=dummy_daterange,weekdays = [],data=dummy_data_type,xaxis=dummy_analysis):
              houseData = filterData[filterData['dataid'] == house].sort_values('time', ascending = True)[[data,'time']]
             #  that cuts the house, sorts by ascending time, and pulls out only the type of data that was requested
              houseData.index = houseData['time'] # reindex by the datetime
@@ -83,20 +84,20 @@ def first_tab_create(filterData):
 
              if xaxis == 'avgday':
                  houseData = houseData.resample('1d').sum() ####chjange to mean
-                 houseData['time'] = houseData.index
-                 houseData = houseData.groupby(houseData['time'].dt.dayofweek)[data].mean()
-                 houseData.index = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+                 houseData['axis'] = houseData.index
+                 houseData = houseData.groupby(houseData['axis'].dt.dayofweek)[data].mean()
+                 #houseData.index = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
                  
 
 
              if xaxis == 'avghour':
                  houseData = houseData.resample('1h').mean()
-                 houseData['time'] = houseData.index
-                 houseData = houseData.groupby(houseData['time'].dt.hour)[data].mean() # Does not account for UTC change!
+                 houseData['axis'] = houseData.index
+                 houseData = houseData.groupby(houseData['axis'].dt.hour)[data].mean() # Does not account for UTC change!
     
-
-             houseData = pd.DataFrame(data = houseData)
-             houseData['axis'] = houseData.index
+             houseData = pd.DataFrame(data = houseData) # shold figure out a way without needing to make dummy columns
+             houseData['data'] = houseData[data]
+             houseData = houseData.drop(columns = data)
 
            
              return ColumnDataSource(houseData) 
@@ -107,20 +108,25 @@ def first_tab_create(filterData):
 
     def plot1_plot(src):
         # create the plot every time  a change occurs
-        plot1 = figure(title="Energy Consumption Per Period", x_axis_type="datetime", x_axis_label="Date",
+        plot1 = figure(plot_width=1000, plot_height=340,
+                title="Energy Consumption Per Period", x_axis_type="datetime", x_axis_label="Date",
                        y_axis_label="Energy Consumption [kWh]")
-        plot1.line('time', "grid", source=src, )  # simple line plot   #data_type_available[data_type_selector.active]
+        plot1.line('time', "grid", source=src, )  # simple line plot   
+
+        #data_type_available[data_type_selector.active]
 
         return plot1  # plot object type
 
-    def plot2_plot(src):
-        plot2 = figure(x_range = (0,23), y_range=(-7,2), title='Average Power Consumption For Hours in a Day') # gotta do the ranges as mins and maxes
-        plot2.vbar(x='axis', top = 'grid', width=1, source=src) 
-        plot2.yaxis.axis_label = 'Power Consumption [kW]'
-        plot2.xaxis.axis_label = 'Hour of the Day'
-        #plot2 = figure(title = 'PLOT2')
-        #plot2.line('axis','grid', source = src)
+    def plot2_plot(src,avg_to_plot):
+        
+        plot2 = figure(title = 'Average Power Consumption For Hours in a Day',
+                    x_axis_label = 'Hours of Day',
+                    y_axis_label = 'Power Consumption [kW]')
 
+        plot2.plot_width = 500
+        plot2.plot_height = 340
+        plot2.vbar(x='axis', top = 'data', width=1, source=src) 
+        
         return plot2
 
     #########Method3: Update App
@@ -131,7 +137,7 @@ def first_tab_create(filterData):
         home_id_to_plot = 27
         daterange_to_plot = ['2019-05-01', '2019-08-20']
         data_type_to_plot = 'grid'
-        exclude_days_to_plot = []
+        exclude_days_to_plot = [0,1,2,3,4,5,6]
         avg_to_plot = 'avghour'
 
 
@@ -168,8 +174,18 @@ def first_tab_create(filterData):
         # only working button call so far
         granularity_to_plot = granularity_1.labels[granularity_1.active]
 
+        avg_to_plot = analysis.labels[analysis.active]
+        
+        include_days_to_plot = weekdays_checkbox.active # wish they had an inactive :/
+        
+        for i in include_days_to_plot:
+            exclude_days_to_plot.remove(i) # lame way 
+
+        #print(avg_to_plot)
+
+
         #         granularity_to_plot= [granularity_1.labels[i] for i in granularity_1.active]
-        print("before data create")
+       # print("before data create")
         # create a new data source
         new_src1 = plot1_data(home_id_to_plot, daterange=daterange_to_plot, data=data_type_to_plot,
                               xaxis=granularity_to_plot)
@@ -179,7 +195,7 @@ def first_tab_create(filterData):
                 weekdays=exclude_days_to_plot, data=data_type_to_plot,xaxis=avg_to_plot)
 
 
-        print("before data update")
+       # print("before data update")
 
         # push new data  to the source data the rest of the app is usig for plot1
     
@@ -187,7 +203,22 @@ def first_tab_create(filterData):
 
         src2.data.update(new_src2.data)
 
-        print("updated data")
+        ## here we can update plot axes and such
+
+        ## plot 2 updates: 
+
+        if avg_to_plot == 'avgday':
+            plot2.title.text = 'Average Net Power Consumption for Days in a Week'
+            plot2.xaxis.axis_label = 'Weekdays'
+            plot2.yaxis.axis_label = 'Power Consumption[kW]'
+
+        if avg_to_plot == 'avghour':
+            plot2.title.text = 'Average Power Consumption for Hours in a Day'
+            plot2.xaxis.axis_label = 'Hours'
+            plot2.yaxis.axis_label = 'Power Consumption[kW]'
+
+
+       # print("updated data")
 
     #     def new_home(attr,old,new):
     #         return
@@ -196,13 +227,27 @@ def first_tab_create(filterData):
       
     ############# Add widgets
 
-    # only the granularity implemented so far
+    ## only the granularity implemented so far
     granularity_1 = RadioGroup(
         labels=["15 Minutes", "Hour", "Day", "Week", "Month"], active=0)
 
     granularity_1.on_change('active',
                             update)  # not sure exactly how this works but runs update on the change of the button and passes through the value of the button
 
+    ## Analysis button
+    analysis = RadioGroup(
+            labels=['avghour','avgday'], active=0)
+    
+    analysis.on_change('active',
+                        update)
+
+    ## Weekday Checkbox
+    weekdays_checkbox = CheckboxGroup(labels=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],active = [0,1,2,3,4,5,6])
+
+    weekdays_checkbox.on_change('active',update) # Run the whole update
+
+    
+    ## Home Options
     home_ids_available = np.unique(filterData['dataid'])
 
     home_ids_available= list(map(str, home_ids_available))
@@ -212,7 +257,7 @@ def first_tab_create(filterData):
     home_id_selector = Dropdown(label="Home ID to Plot", button_type="warning", menu=home_ids_available, value="27")
 
 
-    # home_id_selector.on_change('value', update) #############put back in later!!!!1
+    # home_id_selector.on_change('value', update) #############put back in later!!!!11111112
 
     date_range_slider = DateRangeSlider(title="Date Range: ", start=date(2019, 5, 1), end=date(2019, 8, 20),
                                         value=(date(2019, 5, 1), date(2019, 8, 20)), step=1, callback_policy = 'mouseup')
@@ -229,16 +274,18 @@ def first_tab_create(filterData):
     plot1 = plot1_plot(src1)
 
     src2 = plot2_data(27,['2019-05-01', '2019-08-20'],[],'grid','avghour')
-    plot2 = plot2_plot(src2)
+    avg_to_plot = 'avghour'
+
+    plot2 = plot2_plot(src2,avg_to_plot) # why doesn't it update avg_to_plot
 
     ##### Formatting of the app screen
 
     # Put controls in a single element (add more later to format)
-    controls = WidgetBox(granularity_1, home_id_selector, date_range_slider)  # data_type_selector)
+    controls = WidgetBox(granularity_1,analysis,weekdays_checkbox, home_id_selector, date_range_slider)  # data_type_selector)
 
     # Create a row layout
 
-    layout = row(controls, column(plot1,plot2))
+    layout = column(row(controls,plot2),plot1)
 
 
     # Make a tab with the layout

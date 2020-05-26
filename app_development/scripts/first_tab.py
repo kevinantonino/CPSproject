@@ -22,6 +22,8 @@ from bokeh.palettes import Category20_16
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
 
+from bokeh.models import Paragraph
+
 
 def first_tab_create(filterData):
     ########method1: create data source for plots
@@ -69,7 +71,9 @@ def first_tab_create(filterData):
         if xaxis == 'Month':
             houseData = houseData.resample('1m').mean()
             houseData[data] = houseData[data] * 3600 / 3600 *24 * 7 * 30 ############this computation is wrong because n stadard month but just go with it for now
-        # if none of these, 15 Minutes is implied and passed through
+        houseData['data'] = houseData[data]
+        houseData = houseData.drop(columns = data)
+
         return ColumnDataSource(houseData)
 
 
@@ -111,7 +115,7 @@ def first_tab_create(filterData):
         plot1 = figure(plot_width=1000, plot_height=340,
                 title="Energy Consumption Per Period", x_axis_type="datetime", x_axis_label="Date",
                        y_axis_label="Energy Consumption [kWh]")
-        plot1.line('time', "grid", source=src, )  # simple line plot   
+        plot1.line('time', 'data', source=src, )  # simple line plot   
 
         #data_type_available[data_type_selector.active]
 
@@ -168,9 +172,9 @@ def first_tab_create(filterData):
 
         #         daterange_to_plot=dummy_daterange
 
-        data_type_to_plot = "grid"  # data_type_available[data_type_selector.active]
+        data_type_to_plot = data_type_selector.labels[data_type_selector.active]
 
-
+ 
         # only working button call so far
         granularity_to_plot = granularity_1.labels[granularity_1.active]
 
@@ -229,20 +233,27 @@ def first_tab_create(filterData):
 
     ## only the granularity implemented so far
     granularity_1 = RadioGroup(
-        labels=["15 Minutes", "Hour", "Day", "Week", "Month"], active=0)
-
+        labels=["15 Minutes", "Hour", "Day", "Week", "Month"], active=0,
+            background ='paleturquoise',
+            max_width = 100)
+    
     granularity_1.on_change('active',
                             update)  # not sure exactly how this works but runs update on the change of the button and passes through the value of the button
 
     ## Analysis button
     analysis = RadioGroup(
-            labels=['avghour','avgday'], active=0)
+            labels=['avghour','avgday'], active=0,
+            background = 'aquamarine',
+            max_width = 100)
     
     analysis.on_change('active',
                         update)
 
     ## Weekday Checkbox
-    weekdays_checkbox = CheckboxGroup(labels=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],active = [0,1,2,3,4,5,6])
+    weekdays_checkbox = CheckboxGroup(labels=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+            active = [0,1,2,3,4,5,6],
+            background = 'lemonchiffon',
+            max_width = 100)
 
     weekdays_checkbox.on_change('active',update) # Run the whole update
 
@@ -263,9 +274,14 @@ def first_tab_create(filterData):
                                         value=(date(2019, 5, 1), date(2019, 8, 20)), step=1, callback_policy = 'mouseup')
     date_range_slider.on_change("value", update)
 
-    # data_type_selector = RadioButtonGroup(labels=["Net Home Consumption","Solar Generation","EV Consumption"],active=0)
+    ## Data Options
 
-    # data_type_selector.on_change('active',update)
+    data_type_selector = RadioGroup(labels=["grid","solar","car1"],
+            background='orchid',
+            active=0)
+    data_type_selector.on_change('active', update)
+
+    
     # data_type_available=["grid","solar","car1"]
 
     ############ Initialize opening plot and data
@@ -281,7 +297,22 @@ def first_tab_create(filterData):
     ##### Formatting of the app screen
 
     # Put controls in a single element (add more later to format)
-    controls = WidgetBox(granularity_1,analysis,weekdays_checkbox, home_id_selector, date_range_slider)  # data_type_selector)
+
+    leftControls = WidgetBox(granularity_1, 
+            sizing_mode="scale_width")  # data_type_selector)
+    rightControls = WidgetBox(analysis,weekdays_checkbox,
+            sizing_mode="scale_width") 
+    bottomControls = WidgetBox(data_type_selector,home_id_selector, date_range_slider, 
+            sizing_mode="scale_both") 
+
+
+    leftText = Paragraph(text = 'Plot 1 Options')
+    rightText = Paragraph(text = 'Plot 2 Options')
+
+    left = column(leftText,leftControls)
+    right = column(rightText,rightControls)
+
+    controls = column(row(left,right),bottomControls)
 
     # Create a row layout
 

@@ -13,6 +13,7 @@ from bokeh.models.widgets import Tabs
 
 # Each tab is drawn by one script
 from scripts.first_tab import first_tab_create
+from scripts.second_tab import second_tab_create
 
 
 # Read data into dataframes
@@ -27,10 +28,10 @@ filterData["time"] = pd.to_datetime(filterData["time"]) # change to appropriate 
 
 # Create each of the tabs
 tab1 = first_tab_create(filterData)
-
+tab2 = second_tab_create(filterData)
 
 # Put all the tabs into one application
-tabs = Tabs(tabs = [tab1])
+tabs = Tabs(tabs = [tab1,tab2])
 
 # Put the tabs in the current document for display
 curdoc().add_root(tabs)

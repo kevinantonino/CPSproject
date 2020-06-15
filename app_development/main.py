@@ -23,9 +23,6 @@ filterData = allData[["car1","grid","solar","local_15min","dataid","state"]] # c
 filterData = filterData.rename(columns={"local_15min":"time"})
 filterData["time"] = pd.to_datetime(filterData["time"]) # change to appropriate data type
 
-
-
-
 # Create each of the tabs
 tab1 = first_tab_create(filterData)
 tab2 = second_tab_create(filterData)

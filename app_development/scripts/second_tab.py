@@ -8,8 +8,6 @@ from bokeh.models.tickers import FixedTicker
 from bokeh.models.widgets import CheckboxGroup, Slider, RangeSlider, Tabs, TableColumn, DataTable, RadioGroup,RadioButtonGroup, Dropdown,DateRangeSlider
 from bokeh.models import ColumnDataSource, DataTable, TableColumn
 from bokeh.layouts import WidgetBox
-from bokeh.models import Button
-from bokeh.events import ButtonClick
 
 # Grid:
 # eGauge data present measuring power drawn from the electrical grid
@@ -67,10 +65,10 @@ def second_tab_create(filterData):
         eqPrice = (netLoad > 0)*15 + 5
         
         eqCost = (sortedGrid[sortedGrid['dataid']==house]['grid'] > 0) * eqPrice
-        eqCost = eqCost.sum() / 100
+        eqCost = eqCost.sum() / 400
 
         cost = (sortedGrid[sortedGrid['dataid']==house]['grid'] > 0) * 20
-        cost = cost.sum() / 100 
+        cost = cost.sum() / 400 
 
         d = {'Sharing $': [eqCost], 'Normal $': [cost],'Saved':[cost-eqCost]}
         df = pd.DataFrame(data=d)
@@ -105,22 +103,6 @@ def second_tab_create(filterData):
         src3.data.update(new_src3.data)
         src4.data.update(new_src4.data)
     
-    def button_handler(new): # find a way to only call the update function to save lines
-        daterange_to_plot = ['2019-05-01', '2019-08-20']
-
-        daterange_raw = list(date_range_slider.value_as_datetime)
-        daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
-        
-        home_id_to_plot = int(home_id_selector.value)
-
-        granularity_to_plot = granularity_1.labels[granularity_1.active]
-        
-        new_src3 = plot3_data(daterange = daterange_to_plot, xaxis = granularity_to_plot)
-        new_src4 = plot4_data(daterange = daterange_to_plot, house = home_id_to_plot)
-
-        src3.data.update(new_src3.data)
-        src4.data.update(new_src4.data)
-
     ## Granularity Button
     granularity_1 = RadioGroup(
         labels=["15 Minutes", "Hour", "Day", "Week", "Month"], active=0,
@@ -133,17 +115,14 @@ def second_tab_create(filterData):
     date_range_slider = DateRangeSlider(title="Date Range: ", 
             start=date(2019, 5, 1), end=date(2019, 8, 20),value=(date(2019, 5, 1),
                 date(2019, 8, 20)), step=1, callback_policy = 'mouseup',max_width = 250)
-    #date_range_slider.on_change("value", update)
+    date_range_slider.on_change("value_throttled", update)
 
     ## Home Selector
     home_ids_available = np.unique(filterData[filterData['state'] == 'NY']['dataid'])
 
-    home_ids_available= list(map(str, home_ids_available))
-    home_id_selector = Dropdown(label="Home ID to Plot", button_type="warning", menu=home_ids_available)
-
     home_ids_available = list(map(str, home_ids_available))
-    home_id_selector = Dropdown(label="Home ID to Plot", button_type="warning", menu=home_ids_available, value="27", max_width = 350)
-    #home_id_selector.on_change("value",update)
+    home_id_selector = Dropdown(label="Home ID", button_type="warning", menu=home_ids_available, value="27", max_width = 350)
+    home_id_selector.on_change('value',update)
 
 
     ## Initialize src and plot
@@ -160,17 +139,14 @@ def second_tab_create(filterData):
             ]
     data_table = DataTable(source=src4,columns = columns,width=350, height=280)
 
-    ## Button updater
-    update_button = Button(label='Update Range', button_type = 'success', max_width = 250)
-    update_button.on_click(button_handler)
 
     # Create a layout
-    controls = WidgetBox(column(row(granularity_1,column(date_range_slider,update_button)),
+    controls = WidgetBox(column(row(granularity_1,date_range_slider),
         home_id_selector,data_table), sizing_mode = 'scale_both')
 
     layout = row(controls,plot3)
 
     # Make a tab with the layout
-    tab = Panel(child=layout, title='Second Tab')
+    tab = Panel(child=layout, title='Market Analysis')
 
     return tab

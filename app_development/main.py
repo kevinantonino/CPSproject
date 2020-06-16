@@ -20,6 +20,7 @@ from scripts.second_tab import second_tab_create
 allData = pd.read_csv(join(dirname(__file__), 'data', '15min_EV_PV_homes_only.csv'))
 
 filterData = allData[["car1","grid","solar","local_15min","dataid","state"]] # cutting down nonessential columns for the sake of runtime
+filterData['load'] = filterData['grid'] + filterData['solar']
 filterData = filterData.rename(columns={"local_15min":"time"})
 filterData["time"] = pd.to_datetime(filterData["time"]) # change to appropriate data type
 

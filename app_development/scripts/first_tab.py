@@ -84,13 +84,15 @@ def first_tab_create(filterData):
             #  that cuts the house, sorts by ascending time, and pulls out only the type of data that was requested
              houseData.index = houseData['time'] # reindex by the datetime
              houseData = houseData.loc[daterange[0]:daterange[1],:] # cut to the days requested
-             houseData[data] = houseData[data] * 60 * 15 # kilojoules every 15 min
-             houseData = houseData.resample('1h').sum() # kJ every hour
-             houseData[data] = houseData[data] / 3600 # kilojoules to kWh 
 
              for i in weekdays:
                  houseData = houseData[houseData['time'].dt.dayofweek != i] # cut out days we dont want
 
+             houseData[data] = houseData[data] * 60 * 15 # kilojoules every 15 min
+             houseData = houseData.resample('1h').sum() # kJ every hour
+             houseData[data] = houseData[data] / 3600 # kilojoules to kWh 
+
+             
              if xaxis == 'avgday':
                  houseData = houseData.resample('1d').sum() # net daily sum
                  houseData['axis'] = houseData.index

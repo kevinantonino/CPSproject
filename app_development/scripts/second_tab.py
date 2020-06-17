@@ -92,7 +92,20 @@ def second_tab_create(filterData):
                 columns = ['blue no share','green no share','red no share',
                      'blue share', 'green share','red share'])
 
+        print(df)
+        print(ColumnDataSource(df))
         return ColumnDataSource(df)
+
+    def plot4_plot(src):  #plot the new plot 4
+        plot4 = figure(title='Plot 1: To share or not to share',
+                       x_axis_label='Without Sharing',
+                       y_axis_label='Energy Consumed [kWh]')
+
+        plot4.plot_width = 600
+        plot4.plot_height = 400
+        plot4.vbar(x='columns', top='data', width=1, source=src)
+
+        return plot4
         
 
     def plot3_plot(src):
@@ -147,8 +160,9 @@ def second_tab_create(filterData):
     ## Initialize src and plot
     src3 = plot3_data(['2019-05-01', '2019-08-20'],'15 Minutes')
     src4 = plot4_data(['2019-05-01', '2019-08-20'],5679)
-    
+
     plot3 = plot3_plot(src3)
+    plot4 = plot4_plot(src4)
 
     ## Table
    # columns = [
@@ -163,7 +177,7 @@ def second_tab_create(filterData):
     controls = WidgetBox(column(row(granularity_1,date_range_slider),
         home_id_selector), sizing_mode = 'scale_both')
 
-    layout = row(controls,plot3)
+    layout = row(controls,plot4)
 
     # Make a tab with the layout
     tab = Panel(child=layout, title='Market Analysis')

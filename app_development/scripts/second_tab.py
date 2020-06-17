@@ -30,24 +30,25 @@ def second_tab_create(filterData):
         houseData = houseData.loc[daterange[0]:daterange[1],:] # cut to the days requested
        
         if xaxis == '15 Minutes':
-            houseData = houseData
+            houseData = houseData.drop(columns="time")
+            houseData['grid'] = houseData['grid'] * 60 * 15 / 3600 # kWh
 
         if xaxis == 'Hour':
-            houseData = houseData.resample('1h').mean()
-            houseData['grid']=houseData['grid']*3600/3600
+            houseData['grid'] = houseData['grid'] * 60 * 15 / 3600 # kWh
+            houseData = houseData.resample('1h').sum()
 
         if xaxis == 'Day':
-            houseData = houseData.resample('1d').mean()
-            houseData['grid'] = houseData['grid'] * 3600 / 3600 * 24
+            houseData['grid'] = houseData['grid'] * 60 * 15 / 3600 # kWh
+            houseData = houseData.resample('1d').sum()
 
         if xaxis == 'Week':
-            houseData = houseData.resample('1w').mean()
-            houseData['grid'] = houseData['grid'] * 3600 / 3600 *24 * 7
+            houseData['grid'] = houseData['grid'] * 60 * 15 / 3600 # kWh
+            houseData = houseData.resample('1w').sum()
 
         if xaxis == 'Month':
-            houseData = houseData.resample('1m').mean()
-            houseData['grid'] = houseData['grid'] * 3600 / 3600 *24 * 7 * 30 # assumes 30 day month
-        
+            houseData['grid'] = houseData['grid']* 60 * 15 / 3600 # kWh
+            houseData = houseData.resample('1m').sum()
+
         houseData['time'] = houseData.index
         netLoad = houseData.groupby(houseData['time'])['grid'].sum() # L - G
         # note that all of the houses do not have data taken for the same range
@@ -58,20 +59,38 @@ def second_tab_create(filterData):
         return ColumnDataSource(price)
 
     def plot4_data(daterange = dummy_daterange, house = dummy_house):
-        sortedGrid = filterData[filterData['state'] == 'NY'][['time','grid','dataid']].sort_values('time', ascending = True)
-        sortedGrid.index = sortedGrid['time']
-        sortedGrid = sortedGrid.loc[daterange[0]:daterange[1],:]
-        netLoad = sortedGrid.groupby(sortedGrid['time'])['grid'].sum()
-        eqPrice = (netLoad > 0)*15 + 5
-        
-        eqCost = (sortedGrid[sortedGrid['dataid']==house]['grid'] > 0) * eqPrice
-        eqCost = eqCost.sum() / 400
+        sortedData = filterData[filterData['state'] == 'NY'][['time','grid','solar','dataid']].sort_values('time', ascending = True)
+        sortedData.index = sortedData['time']
+        sortedData = sortedData.loc[daterange[0]:daterange[1],:]
+        sortedData['grid'] = sortedData['grid'] * 60 * 15 / 3600 # kWh
+        sortedData['solar'] = sortedData['solar'] * 60 * 15 / 3600 # kWh
 
-        cost = (sortedGrid[sortedGrid['dataid']==house]['grid'] > 0) * 20
-        cost = cost.sum() / 400 
+        houseData = sortedData[sortedData['dataid'] == house]
 
-        d = {'Sharing $': [eqCost], 'Normal $': [cost],'Saved':[cost-eqCost]}
-        df = pd.DataFrame(data=d)
+        L = houseData['grid'] + houseData['solar'] # (L-S) + S = L
+        S =  houseData['solar'] # S
+        Sbar = ( S < L ) * S + ( S > L ) * L # Sbar
+        solarAtDiscount = S - Sbar
+
+        Load = L.sum() # blue plot no share
+        SelfSolarSum = Sbar.sum() # green plot no share
+        DiscountSum = solarAtDiscount.sum() # red plot no share
+
+        sumL = L.cumsum()
+        sumS = S.cumsum()
+        Shat = ( sumS < sumL ) * S + ( sumS > sumL ) * (S * sumL/sumS)
+
+        Load = L.sum() # blue plot share
+        CommunitySolarSum = Shat.sum() # green plot share
+        DiscountShareSum = (S*Shat).sum() # red plot share
+
+        d = {'blue no share': Load, 'green no share': SelfSolarSum, 'red no share': DiscountSum,
+                'blue share': Load, 'green share': CommunitySolarSum, 'red share': DiscountShareSum}
+
+        #d = {'Sharing $': [eqCost], 'Normal $': [cost],'Saved':[cost-eqCost]}
+        df = pd.DataFrame([[Load,SelfSolarSum,DiscountSum,Load,CommunitySolarSum,DiscountShareSum]],
+                columns = ['blue no share','green no share','red no share',
+                     'blue share', 'green share','red share'])
 
         return ColumnDataSource(df)
         
@@ -132,17 +151,17 @@ def second_tab_create(filterData):
     plot3 = plot3_plot(src3)
 
     ## Table
-    columns = [
-            TableColumn(field='Sharing $', title='Sharing Cost'),
-            TableColumn(field='Normal $', title='Regular Cost'),
-            TableColumn(field='Saved',title='Amount Saved')
-            ]
-    data_table = DataTable(source=src4,columns = columns,width=350, height=280)
+   # columns = [
+   #         TableColumn(field='Sharing $', title='Sharing Cost'),
+   #         TableColumn(field='Normal $', title='Regular Cost'),
+   #         TableColumn(field='Saved',title='Amount Saved')
+   #         ]
+   # data_table = DataTable(source=src4,columns = columns,width=350, height=280)
 
 
     # Create a layout
     controls = WidgetBox(column(row(granularity_1,date_range_slider),
-        home_id_selector,data_table), sizing_mode = 'scale_both')
+        home_id_selector), sizing_mode = 'scale_both')
 
     layout = row(controls,plot3)
 

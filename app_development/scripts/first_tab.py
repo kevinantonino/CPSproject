@@ -52,7 +52,6 @@ def first_tab_create(filterData):
         houseData.index = houseData['time']  # reindex by the datetime
         houseData = houseData.loc[daterange[0]:daterange[1], :]  # cut to the days requested
 
-        # Now we get into the xaxis user options #
         if xaxis == '15 Minutes':
             houseData = houseData.drop(columns="time")
             houseData[data] = houseData[data] * 60 * 15 / 3600 # kWh

@@ -8,6 +8,7 @@ from bokeh.models.tickers import FixedTicker
 from bokeh.models.widgets import CheckboxGroup, Slider, RangeSlider, Tabs, TableColumn, DataTable, RadioGroup,RadioButtonGroup, Dropdown,DateRangeSlider
 from bokeh.models import ColumnDataSource, DataTable, TableColumn
 from bokeh.layouts import WidgetBox
+from bokeh.palettes import Spectral6
 
 # Grid:
 # eGauge data present measuring power drawn from the electrical grid
@@ -84,25 +85,56 @@ def second_tab_create(filterData):
         CommunitySolarSum = Shat.sum() # green plot share
         DiscountShareSum = (S*Shat).sum() # red plot share
 
-        d = {'blue no share': Load, 'green no share': SelfSolarSum, 'red no share': DiscountSum,
-                'blue share': Load, 'green share': CommunitySolarSum, 'red share': DiscountShareSum}
+        #d = {'blue no share': Load, 'green no share': SelfSolarSum, 'red no share': DiscountSum,
+         #       'blue share': Load, 'green share': CommunitySolarSum, 'red share': DiscountShareSum}
 
-        #d = {'Sharing $': [eqCost], 'Normal $': [cost],'Saved':[cost-eqCost]}
-        df = pd.DataFrame([[Load,SelfSolarSum,DiscountSum,Load,CommunitySolarSum,DiscountShareSum]],
-                columns = ['blue no share','green no share','red no share',
-                     'blue share', 'green share','red share'])
+        #d = {'axis': ['blue no share','red no share','green no share','blue share','red share','green share'],
+        #        'data': [Load,SelfSolarSum,DiscountSum,Load,CommunitySolarSum,DiscountShareSum]}
+        d = {'axis': [0,1,2,3,4,5], 'colors': ['blue','green','red','blue','green','red'],
+                'data': [Load,SelfSolarSum,DiscountSum,Load,CommunitySolarSum,DiscountShareSum]}
+        df = pd.DataFrame(data = d)
 
-        return ColumnDataSource(df)
+       # df = pd.DataFrame([[Load,SelfSolarSum,DiscountSum,Load,CommunitySolarSum,DiscountShareSum]],
+       #         columns = ['blue no share','green no share','red no share',
+       #              'blue share', 'green share','red share'])
+
+
+        #titles = ['Load','Consumed Solar','Discount','Load','Consumed Solar','Discount']
+        #values = [Load,SelfSolarSum,DiscountSum,Load,CommunitySolarSum,DiscountShareSum]
+    
+
+        #return ColumnDataSource(data = dict(titles=titles, values=values))
+        return ColumnDataSource(data=df)
         
 
     def plot3_plot(src):
         plot3 = figure(title = 'Equilibrium Price',x_axis_type="datetime", x_axis_label="Time",
             y_axis_label="Price")
         plot3.line('time','grid',source = src)
+        plot3.plot_width = 500
+        plot3.plot_height = 300
         plot3.yaxis.ticker = [0,1]
-        plot3.yaxis.major_label_overrides = {0: 'Pi_nm', 1: 'Pi_g'}
+        plot3.yaxis.major_label_overrides = {0: '5 Cents', 1: '20 Cents'}
 
         return plot3
+
+    def plot4_plot(src):
+        plot4 = figure(title = 'Sharing Market Effects of Home 5679',
+                    x_axis_label = 'No Sharing / Sharing Energy Consumption',
+                    y_axis_label = 'Energy [kWh]')
+
+        plot4.plot_width =700
+        plot4.plot_height = 300
+        plot4.vbar(x='axis', top = 'data', color = 'colors',width=1, source=src)
+        plot4.xgrid.grid_line_color = None
+        plot4.xaxis.ticker = [0,1,2,3,4,5]
+        #plot4.legend.orientation = 'horizontal'
+        #plot4.legend.location = "top_center"
+
+        plot4.xaxis.major_label_overrides = {0: 'Load', 1: 'Consumed Solar', 
+                2: 'Solar Sold', 3: 'Load', 4: 'Consumed Solar', 5: 'Solar Sold'}
+
+        return plot4
 
 
     def update(attr, old, new):
@@ -115,6 +147,8 @@ def second_tab_create(filterData):
         home_id_to_plot = int(home_id_selector.value)
 
         granularity_to_plot = granularity_1.labels[granularity_1.active]
+
+        plot4.title.text = f'Sharing Market Effects of Home {home_id_to_plot}'
         
         new_src3 = plot3_data(daterange = daterange_to_plot, xaxis = granularity_to_plot)
         new_src4 = plot4_data(daterange = daterange_to_plot, house = home_id_to_plot)
@@ -149,6 +183,7 @@ def second_tab_create(filterData):
     src4 = plot4_data(['2019-05-01', '2019-08-20'],5679)
     
     plot3 = plot3_plot(src3)
+    plot4 = plot4_plot(src4)
 
     ## Table
    # columns = [
@@ -163,7 +198,7 @@ def second_tab_create(filterData):
     controls = WidgetBox(column(row(granularity_1,date_range_slider),
         home_id_selector), sizing_mode = 'scale_both')
 
-    layout = row(controls,plot3)
+    layout = column(row(controls,plot3),plot4)
 
     # Make a tab with the layout
     tab = Panel(child=layout, title='Market Analysis')

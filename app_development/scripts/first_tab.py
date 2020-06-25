@@ -123,8 +123,8 @@ def first_tab_create(filterData):
         return plot1  # plot object type
 
     def plot2_plot(src):
-        plot2 = figure(title = 'Plot 2: Average Weekly Net Load Profile of Home x',
-                    x_axis_label = 'Hours of Day',
+        plot2 = figure(title = 'Plot 2: Average Weekly Net Load Profile of Home 27',
+                    x_axis_label = 'Day of the week',
                     y_axis_label = 'Net Load [kWh]')
 
         plot2.plot_width = 600
@@ -274,7 +274,7 @@ def first_tab_create(filterData):
 
 
     ## Put controls in a single element (add more later to format)
-    rightTextBottom = Paragraph(text = 'Day-of-week selection',width = 100)  
+    rightTextBottom = Paragraph(text = 'Day-of-week Selection',width = 100)  
 
     leftControls = WidgetBox(granularity_1, 
             sizing_mode="scale_width")  # data_type_selector)

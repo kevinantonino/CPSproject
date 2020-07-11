@@ -25,17 +25,18 @@ from bokeh.application import Application
 from bokeh.models import Paragraph
 
 
-def first_tab_create(filterData):
+def first_tab_create(filterData,enel_data):
     ########method1: create data source for plots
 
     # dummy data that will be replaced by button values once we get those implemented (right now only granulaity button is implemented)
 
+    data_set= enel_data #filterData
     all_min_date = filterData.groupby('dataid').agg(min)["time"]
     all_max_date = filterData.groupby('dataid').agg(max)["time"]
 
-    dummy_daterange = ['2019-05-01', '2019-08-20']
-    dummy_home_id = 27
-    dummy_data_type = 'car1'
+    dummy_daterange = ['2019-01-06','2019-01-07'] #['2019-05-01', '2019-08-20']
+    dummy_home_id =   118000000008 #27
+    dummy_data_type = 'solar'
     dummy_granularity = '15 Minutes'
     dummy_analysis = 'avgday'
 
@@ -47,7 +48,7 @@ def first_tab_create(filterData):
         # data is a string ex. 'car1'
         # xaxis is also a string ex. 'hour'
 
-        houseData = filterData[filterData['dataid'] == house].sort_values('time', ascending=True)[[data, 'time']]
+        houseData = data_set[data_set['dataid'] == house].sort_values('time', ascending=True)[[data, 'time']]
         # that cuts the house, sorts by ascending time, and pulls out only the type of data that was requested
         houseData.index = houseData['time']  # reindex by the datetime
         houseData = houseData.loc[daterange[0]:daterange[1], :]  # cut to the days requested
@@ -79,7 +80,7 @@ def first_tab_create(filterData):
 
 
     def plot2_data(house,daterange=dummy_daterange,weekdays = [],data=dummy_data_type,xaxis=dummy_analysis):
-             houseData = filterData[filterData['dataid'] == house].sort_values('time', ascending = True)[[data,'time']]
+             houseData = data_set[data_set['dataid'] == house].sort_values('time', ascending = True)[[data,'time']]
             #  that cuts the house, sorts by ascending time, and pulls out only the type of data that was requested
              houseData.index = houseData['time'] # reindex by the datetime
              houseData = houseData.loc[daterange[0]:daterange[1],:] # cut to the days requested
@@ -138,19 +139,33 @@ def first_tab_create(filterData):
     def update(attr, old, new):  # still a little unsure how the update function gets values passed in implicitly
         # these values to be replaced with button/user inputs
 
-        home_id_to_plot = 27
-        daterange_to_plot = ['2019-05-01', '2019-08-20']
-        data_type_to_plot = 'grid'
-        exclude_days_to_plot = [0,1,2,3,4,5,6]
-        avg_to_plot = 'avgday'
+        # home_id_to_plot =  dummy_home_id #27
+        # daterange_to_plot = dummy_daterange  #['2019-05-01', '2019-08-20']
+        # data_type_to_plot =  dummy_data_type #'grid'
+        # exclude_days_to_plot = [0,1,2,3,4,5,6]
+        # avg_to_plot = 'avgday'
         daterange_raw = list(date_range_slider.value_as_datetime)
      
         daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
         granularity_to_plot = granularity_1.labels[granularity_1.active]
         home_id_to_plot = int(home_id_selector.value)
 
-        data_selector = data_type_selector.labels[data_type_selector.active] 
-        
+        data_selector = data_type_selector.labels[data_type_selector.active]
+
+        # if data_set_selector== "Enel Data":
+        #     data_type_selector = RadioGroup(
+        #         labels=["Net Load", "Load", "PV Generation"],
+        #         background='orchid',
+        #         active=0, max_width=260)
+        #     # data_type_selector.on_change('active', update)
+
+
+        # if data_set_selector == "Pecan Street Data":
+        #     data_type_selector = RadioGroup(labels=["Net Load", "Load", "PV Generation", "Electric Vehicle Consumption"],
+        #                                 background='orchid',
+        #                                 active=0, max_width=260)
+        #     #data_type_selector.on_change('active', update)
+
         if data_selector == 'Net Load':
             data_type_to_plot = 'grid'
             plot2.yaxis.axis_label = 'Net Load [kWh]'
@@ -228,6 +243,8 @@ def first_tab_create(filterData):
     analysis.on_change('active',
                         update)
 
+
+
     ## Weekday Checkbox
     weekdays_checkbox = CheckboxGroup(labels=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
             active = [0,1,2,3,4,5,6],
@@ -247,8 +264,11 @@ def first_tab_create(filterData):
 
 
     ## Date Range Selector
-    date_range_slider = DateRangeSlider(title="Date Range: ", start=date(2019, 5, 1), end=date(2019, 8, 20),
-                                        value=(date(2019, 5, 1), date(2019, 8, 20)), step=1, callback_policy = 'mouseup',max_width = 260)
+    date_range_slider = DateRangeSlider(title="Date Range: ", start=date(2019, 1, 6), end=date(2019,1,7),
+                                        value=(date(2019, 1, 6), date(2019, 1, 7)), step=1, callback_policy = 'mouseup',max_width = 260)
+
+                                        #start=date(2019, 5, 1), end=date(2019, 8, 20),
+                                        #value=(date(2019, 5, 1), date(2019, 8, 20)), step=1, callback_policy = 'mouseup',max_width = 260)
     date_range_slider.on_change("value_throttled", update)
 
 
@@ -257,6 +277,15 @@ def first_tab_create(filterData):
             background='orchid',
             active=0,max_width = 260)
     data_type_selector.on_change('active', update)
+
+    #data set selector
+    data_set_selector = RadioGroup(
+        labels=["Pecan Street Data", 'Enel Data'], active=0,
+        background='aquamarine',
+        max_width=125)
+
+    analysis.on_change('active',
+                       update)
 
     
     ## Initialize opening plot and data
@@ -276,7 +305,7 @@ def first_tab_create(filterData):
     ## Put controls in a single element (add more later to format)
     rightTextBottom = Paragraph(text = 'Day-of-week Selection',width = 100)  
 
-    leftControls = WidgetBox(granularity_1, 
+    leftControls = WidgetBox(granularity_1, data_set_selector,
             sizing_mode="scale_width")  # data_type_selector)
     rightControls = WidgetBox(analysis,rightTextBottom,weekdays_checkbox,
             sizing_mode="scale_width") 

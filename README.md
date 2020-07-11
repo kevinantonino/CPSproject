@@ -10,3 +10,7 @@ To run the Application on a local server:
 - type in: "bokeh serve --show app_development"
 
 bokeh needs to be installed of course
+
+
+cd "C:\Users\Caleb\Documents\GitHub\CPSproject"
+bokeh serve --show app_development"

@@ -18,14 +18,20 @@ from scripts.second_tab import second_tab_create
 
 # Read data into dataframes
 allData = pd.read_csv(join(dirname(__file__), 'data', '15min_EV_PV_homes_only.csv'))
+enel_data= pd.read_csv(join(dirname(__file__), 'data', 'cleaned_enel_data3.csv'))
+
+
 
 filterData = allData[["car1","grid","solar","local_15min","dataid","state"]] # cutting down nonessential columns for the sake of runtime
 filterData['load'] = filterData['grid'] + filterData['solar']
 filterData = filterData.rename(columns={"local_15min":"time"})
 filterData["time"] = pd.to_datetime(filterData["time"]) # change to appropriate data type
 
+enel_data["time"]= pd.to_datetime(enel_data["time"]) # change to appropriate data type
+enel_data["grid"]= enel_data["solar"]-enel_data["load"] #create grid value
+
 # Create each of the tabs
-tab1 = first_tab_create(filterData)
+tab1 = first_tab_create(filterData,enel_data)
 tab2 = second_tab_create(filterData)
 
 # Put all the tabs into one application

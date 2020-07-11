@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from datetime import date
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # from bokeh.io import output_file
 from bokeh.layouts import column, row
@@ -39,6 +39,13 @@ def first_tab_create(filterData,enel_data):
     dummy_data_type = 'solar'
     dummy_granularity = '15 Minutes'
     dummy_analysis = 'avgday'
+
+
+    def datetime_range(start, end, delta):
+        current = start
+        while current < end:
+            yield current
+            current += delta
 
     def plot1_data(house, daterange=dummy_daterange, data=dummy_data_type, xaxis=dummy_granularity):
 
@@ -90,25 +97,34 @@ def first_tab_create(filterData,enel_data):
 
              houseData[data] = houseData[data] * 60 * 15 # kilojoules every 15 min
              houseData = houseData.resample('1h').sum() # kJ every hour
-             houseData[data] = houseData[data] / 3600 # kilojoules to kWh 
+             houseData[data] = houseData[data] / 3600 # kilojoules to kWh
 
-             
+
              if xaxis == 'avgday':
                  houseData = houseData.resample('1d').sum() # net daily sum
                  houseData['axis'] = houseData.index
                  houseData = houseData.groupby(houseData['axis'].dt.dayofweek)[data].mean()
                  #houseData.index = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-                 
+
              if xaxis == 'avghour':
                  houseData['axis'] = houseData.index
                  houseData = houseData.groupby(houseData['axis'].dt.hour)[data].mean() # Does not account for UTC change!
-    
+
+
+
+
+
+             dts = [dt.strftime('%Y-%m-%d T%H:%M Z') for dt in
+                    datetime_range(datetime(2016, 9, 1, 7), datetime(2016, 9, 1, 9 + 12),
+                                   timedelta(minutes=15))]
+
+             print(dts)
              houseData = pd.DataFrame(data = houseData) # shold figure out a way without needing to make dummy columns
              houseData['data'] = houseData[data]
              houseData = houseData.drop(columns = data)
 
-           
-             return ColumnDataSource(houseData) 
+
+             return ColumnDataSource(houseData)
 
     # now we need to set up our plot axis
 
@@ -119,7 +135,7 @@ def first_tab_create(filterData,enel_data):
                 title="Net Load Profile of Home x", x_axis_type="datetime", x_axis_label="Time",
                        y_axis_label="Net Load [kWh]")
 
-        plot1.line('time', 'data', source=src)  # simple line plot   
+        plot1.line('time', 'data', source=src)  # simple line plot
 
         return plot1  # plot object type
 
@@ -130,8 +146,8 @@ def first_tab_create(filterData,enel_data):
 
         plot2.plot_width = 600
         plot2.plot_height = 400
-        plot2.vbar(x='axis', top = 'data', width=1, source=src) 
-        
+        plot2.vbar(x='axis', top = 'data', width=1, source=src)
+
         return plot2
 
     ## Update Function
@@ -145,7 +161,7 @@ def first_tab_create(filterData,enel_data):
         # exclude_days_to_plot = [0,1,2,3,4,5,6]
         # avg_to_plot = 'avgday'
         daterange_raw = list(date_range_slider.value_as_datetime)
-     
+
         daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
         granularity_to_plot = granularity_1.labels[granularity_1.active]
         home_id_to_plot = int(home_id_selector.value)
@@ -170,7 +186,7 @@ def first_tab_create(filterData,enel_data):
             data_type_to_plot = 'grid'
             plot2.yaxis.axis_label = 'Net Load [kWh]'
             plot1.yaxis.axis_label  = 'Net Load [kWh]'
-        
+
         if data_selector == 'Load':
             data_type_to_plot = 'load'
             plot2.yaxis.axis_label = 'Load [kWh]'
@@ -191,32 +207,32 @@ def first_tab_create(filterData,enel_data):
 
         if avg_selector == 'Weekly Pattern':
             avg_to_plot = 'avgday'
-        
+
         if avg_selector == 'Daily Pattern':
             avg_to_plot = 'avghour'
 
         include_days_to_plot = weekdays_checkbox.active # wish they had an inactive :/
-        
+
         for i in include_days_to_plot:
-            exclude_days_to_plot.remove(i) # lame way 
-        
+            exclude_days_to_plot.remove(i) # lame way
+
 
         ## SRC Updates
         new_src1 = plot1_data(home_id_to_plot, daterange=daterange_to_plot,
                 data=data_type_to_plot, xaxis=granularity_to_plot)
 
-        new_src2 = plot2_data(home_id_to_plot, daterange=daterange_to_plot, 
+        new_src2 = plot2_data(home_id_to_plot, daterange=daterange_to_plot,
                 weekdays=exclude_days_to_plot, data=data_type_to_plot,xaxis=avg_to_plot)
-        
+
         src1.data.update(new_src1.data)
         src2.data.update(new_src2.data)
 
 
-        ## plot 2 updates: 
+        ## plot 2 updates:
         if avg_to_plot == 'avgday':
             plot2.title.text = f'Average Weekly {data_selector} Profile of Home x'
             plot2.xaxis.axis_label = 'Day of the week'
-            
+
 
         if avg_to_plot == 'avghour':
             plot2.title.text = f'Average Hourly {data_selector} Profile of Home x'
@@ -230,7 +246,7 @@ def first_tab_create(filterData,enel_data):
         labels=["15 Minutes", "Hour", "Day", "Week", "Month"], active=0,
             background ='paleturquoise',
             max_width = 125)
-    
+
     granularity_1.on_change('active',
                             update)  # not sure exactly how this works but runs update on the change of the button and passes through the value of the button
 
@@ -239,7 +255,7 @@ def first_tab_create(filterData,enel_data):
             labels=['Weekly Pattern','Daily Pattern'], active=0,
             background = 'aquamarine',
             max_width = 125)
-    
+
     analysis.on_change('active',
                         update)
 
@@ -253,12 +269,12 @@ def first_tab_create(filterData,enel_data):
 
     weekdays_checkbox.on_change('active',update) # Run the whole update
 
-    
+
     ## Home Selector
     home_ids_available = np.unique(filterData[filterData['state'] == 'NY']['dataid'])
 
     home_ids_available = list(map(str, home_ids_available))
-    home_id_selector = Dropdown(label="Home ID", button_type="warning", 
+    home_id_selector = Dropdown(label="Home ID", button_type="warning",
             menu=home_ids_available, value="27", max_width = 260)
     home_id_selector.on_change('value',update)
 
@@ -284,8 +300,8 @@ def first_tab_create(filterData,enel_data):
         background='aquamarine',
         max_width=125)
 
-    analysis.on_change('active',
-                       update)
+    # analysis.on_change('active',
+    #                    update)
 
     
     ## Initialize opening plot and data

@@ -26,12 +26,10 @@ from bokeh.models import Paragraph
 
 
 def first_tab_create(filterData):
-    ########method1: create data source for plots
-
-    # dummy data that will be replaced by button values once we get those implemented (right now only granulaity button is implemented)
-
+    
     all_min_date = filterData.groupby('dataid').agg(min)["time"]
     all_max_date = filterData.groupby('dataid').agg(max)["time"]
+
 
     dummy_daterange = ['2019-05-01', '2019-08-20']
     dummy_home_id = 27
@@ -79,6 +77,7 @@ def first_tab_create(filterData):
 
 
     def plot2_data(house,daterange=dummy_daterange,weekdays = [],data=dummy_data_type,xaxis=dummy_analysis):
+             #communityData = filterData[filterData['state'] == filterData[filterData['dataid'] == house]['state'].iloc[0]]
              houseData = filterData[filterData['dataid'] == house].sort_values('time', ascending = True)[[data,'time']]
             #  that cuts the house, sorts by ascending time, and pulls out only the type of data that was requested
              houseData.index = houseData['time'] # reindex by the datetime
@@ -115,7 +114,7 @@ def first_tab_create(filterData):
 
     def plot1_plot(src):
         plot1 = figure(plot_width=1000, plot_height=340,
-                title="Net Load Profile of Home x", x_axis_type="datetime", x_axis_label="Time",
+                title="Net Load Profile of Home 27", x_axis_type="datetime", x_axis_label="Time",
                        y_axis_label="Net Load [kWh]")
 
         plot1.line('time', 'data', source=src)  # simple line plot   
@@ -150,6 +149,9 @@ def first_tab_create(filterData):
         home_id_to_plot = int(home_id_selector.value)
 
         data_selector = data_type_selector.labels[data_type_selector.active] 
+
+        ## plot updates: 
+        plot1.title.text = f'{data_selector} Profile of Home {home_id_to_plot}'
         
         if data_selector == 'Net Load':
             data_type_to_plot = 'grid'
@@ -199,13 +201,21 @@ def first_tab_create(filterData):
 
         ## plot 2 updates: 
         if avg_to_plot == 'avgday':
-            plot2.title.text = f'Average Weekly {data_selector} Profile of Home x'
+            plot2.title.text = f'Average Weekly {data_selector} Profile of Home {home_id_to_plot}'
             plot2.xaxis.axis_label = 'Day of the week'
             
 
         if avg_to_plot == 'avghour':
-            plot2.title.text = f'Average Hourly {data_selector} Profile of Home x'
+            plot2.title.text = f'Average Hourly {data_selector} Profile of Home {home_id_to_plot}'
             plot2.xaxis.axis_label = 'Hours of Day'
+            
+
+        ## Update DateRange Slider
+        
+        startDate = filterData[filterData['dataid'] == home_id_to_plot].head(1)['time'].dt.date.iloc[0]
+        endDate = filterData[filterData['dataid'] == home_id_to_plot].tail(1)['time'].dt.date.iloc[0]
+        date_range_slider.start = startDate
+        date_range_slider.end = endDate
 
 
     ## Widgets ##
@@ -238,7 +248,7 @@ def first_tab_create(filterData):
 
     
     ## Home Selector
-    home_ids_available = np.unique(filterData[filterData['state'] == 'NY']['dataid'])
+    home_ids_available = np.unique(filterData['dataid'])
 
     home_ids_available = list(map(str, home_ids_available))
     home_id_selector = Dropdown(label="Home ID", button_type="warning", 

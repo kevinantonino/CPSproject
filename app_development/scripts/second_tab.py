@@ -25,11 +25,11 @@ def second_tab_create(filterData):
     dummy_pi_u = .20
     dummy_pi_nm = .05
     dummy_mode = 1
+    dummy_community = 'NY'
 
-    def plot3_data(daterange = dummy_daterange, xaxis = dummy_granularity):
-
-        houseData = filterData[filterData['state'] == 'NY'][['time','grid']]
-        # Resample doesn't like multiple time zones, note to find a way around this
+    def plot3_data(daterange = dummy_daterange, xaxis = dummy_granularity,community = dummy_community):
+        houseData = filterData[filterData['state'] == community]    
+        houseData = houseData[['time','grid']]
         houseData = houseData.sort_values('time', ascending = True)
         houseData.index = houseData['time']
         houseData = houseData.loc[daterange[0]:daterange[1],:] # cut to the days requested
@@ -63,8 +63,9 @@ def second_tab_create(filterData):
         
         return ColumnDataSource(price)
 
-    def barPlot_data(daterange = dummy_daterange, house = dummy_house, pi_u = dummy_pi_u, pi_nm = dummy_pi_nm, mode = dummy_mode):
-        sortedData = filterData[filterData['state'] == 'NY'][['time','grid','solar','dataid']].sort_values('time', ascending = True)
+    def barPlot_data(daterange = dummy_daterange, house = dummy_house, pi_u = dummy_pi_u, pi_nm = dummy_pi_nm, mode = dummy_mode,community = dummy_community):
+        sortedData = filterData[filterData['state'] == community]    
+        sortedData = sortedData[['time','grid','solar','dataid']].sort_values('time', ascending = True)
         sortedData.index = sortedData['time']
         sortedData = sortedData.loc[daterange[0]:daterange[1],:]
         sortedData['grid'] = sortedData['grid'] * 60 * 15 / 3600 # kWh
@@ -166,26 +167,50 @@ def second_tab_create(filterData):
 
 
     def update(attr, old, new):
-        
-        daterange_to_plot = ['2019-05-01', '2019-08-20']
-        daterange_raw = list(date_range_slider.value_as_datetime)
-        daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
-        home_id_to_plot = int(home_id_selector.value)
         granularity_to_plot = granularity_1.labels[granularity_1.active]
         pi_u_to_plot = int(pi_u_input.value) / 100
         pi_nm_to_plot = int(pi_nm_input.value) / 100
+        community_to_plot = community_selector.labels[community_selector.active]
 
+        ## Home Updates
+        home_ids = np.unique(filterData[filterData['state'] == community_to_plot]['dataid'])
+        home_ids_available = list(map(str, home_ids))
+        home_id_selector.menu = home_ids_available
+        home_id_to_plot = int(home_id_selector.value)
+
+        if home_id_to_plot not in home_ids:
+            if community_to_plot == 'NY':
+                home_id_to_plot = 5679
+            if community_to_plot == 'TX':
+                home_id_to_plot = 661
+            if community_to_plot == 'Italy':
+                home_id_to_plot = 118000000008
+
+        ## DateRange updates
+        startDate = filterData[filterData['dataid'] == home_id_to_plot].head(1)['time'].dt.date.iloc[0]
+        endDate = filterData[filterData['dataid'] == home_id_to_plot].tail(1)['time'].dt.date.iloc[0]
+        date_range_slider.start = startDate
+        date_range_slider.end = endDate
+        if home_id_to_plot not in home_ids:
+            date_range_slider.value = (startDate,endDate)
+
+        daterange_raw = list(date_range_slider.value_as_datetime)
+        daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
+
+
+        ## Plot Updates
         plot4.title.text = f'Sharing Market Energy Effects of Home {home_id_to_plot}'
         plot5.title.text = f'Sharing Market Effects on the Bill of Home {home_id_to_plot}'
         plot3.yaxis.major_label_overrides = {0: f'{pi_nm_input.value} ¢', 1: f'{pi_u_input.value} ¢'}
         
-        new_src3 = plot3_data(daterange = daterange_to_plot, xaxis = granularity_to_plot)
+        ## SRC Updates
+        new_src3 = plot3_data(daterange = daterange_to_plot, xaxis = granularity_to_plot,community = community_to_plot)
         new_src4 = barPlot_data(daterange = daterange_to_plot, house = home_id_to_plot, 
-                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 1)
+                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 1,community = community_to_plot)
         new_src5 = barPlot_data(daterange = daterange_to_plot, house = home_id_to_plot, 
-                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 2)
+                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 2,community = community_to_plot)
         new_src6 = barPlot_data(daterange = daterange_to_plot, house = home_id_to_plot, 
-                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 3)
+                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 3,community = community_to_plot)
 
 
         src3.data.update(new_src3.data)
@@ -202,9 +227,12 @@ def second_tab_create(filterData):
                             update)
     
     ## Daterange Slider Button
+    startDate = filterData[filterData['dataid'] == 5679].head(1)['time'].dt.date.iloc[0]
+    endDate = filterData[filterData['dataid'] == 5679].tail(1)['time'].dt.date.iloc[0]
+
     date_range_slider = DateRangeSlider(title="Date Range: ", 
-            start=date(2019, 5, 1), end=date(2019, 8, 20),value=(date(2019, 5, 1),
-                date(2019, 8, 20)), step=1, callback_policy = 'mouseup',max_width = 250)
+            start=startDate, end=endDate, value=(startDate,
+                endDate), step=1, callback_policy = 'mouseup',max_width = 250)
     date_range_slider.on_change("value_throttled", update)
 
     ## Home Selector
@@ -222,12 +250,18 @@ def second_tab_create(filterData):
 
     text_input = WidgetBox(row(pi_u_input,pi_nm_input))
 
+    ## Community Options
+    community_selector = RadioGroup(labels=["NY","TX",'Italy'],
+            background='orchid',
+            active=0,max_width = 200)
+    community_selector.on_change('active', update)
+
 
     ## Initialize src and plot
-    src3 = plot3_data(['2019-05-01', '2019-08-20'],'15 Minutes')
-    src4 = barPlot_data(['2019-05-01', '2019-08-20'],5679,.20,.05,1)
-    src5 = barPlot_data(['2019-05-01', '2019-08-20'],5679,.20,.05,2)
-    src6 = barPlot_data(['2019-05-01', '2019-08-20'],5679,.20,.05,3)
+    src3 = plot3_data(['2019-05-01', '2019-08-20'],'15 Minutes','NY')
+    src4 = barPlot_data(['2019-05-01', '2019-08-20'],5679,.20,.05,1,'NY')
+    src5 = barPlot_data(['2019-05-01', '2019-08-20'],5679,.20,.05,2,'NY')
+    src6 = barPlot_data(['2019-05-01', '2019-08-20'],5679,.20,.05,3,'NY')
     
     plot3 = plot3_plot(src3)
     plot4 = plot4_plot(src4)
@@ -245,7 +279,7 @@ def second_tab_create(filterData):
     
     table_title = Paragraph(text = 'Value of Solar Energy [¢/kWh]', width=350,max_height = 50)
 
-    controls = WidgetBox(column(row(granularity_1,date_range_slider),
+    controls = WidgetBox(column(row(granularity_1,column(date_range_slider,community_selector)),
         home_id_selector,text_input,table_title,data_table))
 
     layout = row(column(controls,plot3),column(plot4,plot5))

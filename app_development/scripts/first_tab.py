@@ -24,6 +24,7 @@ from bokeh.application import Application
 
 from bokeh.models import Paragraph
 
+home_to_plot = 27
 
 def first_tab_create(filterData):
     
@@ -135,23 +136,21 @@ def first_tab_create(filterData):
     ## Update Function
 
     def update(attr, old, new):  # still a little unsure how the update function gets values passed in implicitly
-        # these values to be replaced with button/user inputs
 
-        home_id_to_plot = 27
+        global home_to_plot
+        
         daterange_to_plot = ['2019-05-01', '2019-08-20']
         data_type_to_plot = 'grid'
         exclude_days_to_plot = [0,1,2,3,4,5,6]
         avg_to_plot = 'avgday'
-        daterange_raw = list(date_range_slider.value_as_datetime)
-     
-        daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
+        
         granularity_to_plot = granularity_1.labels[granularity_1.active]
-        home_id_to_plot = int(home_id_selector.value)
+        new_home_to_plot = int(home_id_selector.value)
 
         data_selector = data_type_selector.labels[data_type_selector.active] 
 
         ## plot updates: 
-        plot1.title.text = f'{data_selector} Profile of Home {home_id_to_plot}'
+        plot1.title.text = f'{data_selector} Profile of Home {new_home_to_plot}'
         
         if data_selector == 'Net Load':
             data_type_to_plot = 'grid'
@@ -188,34 +187,55 @@ def first_tab_create(filterData):
             exclude_days_to_plot.remove(i) # lame way 
         
 
+        ## plot 2 updates: 
+        if avg_to_plot == 'avgday':
+            plot2.title.text = f'Average Weekly {data_selector} Profile of Home {new_home_to_plot}'
+            plot2.xaxis.axis_label = 'Day of the week'
+            
+
+        if avg_to_plot == 'avghour':
+            plot2.title.text = f'Average Hourly {data_selector} Profile of Home {new_home_to_plot}'
+            plot2.xaxis.axis_label = 'Hours of Day'
+            
+
+        ## Update DateRange Slider
+        if new_home_to_plot != home_to_plot:
+            state = filterData[filterData['dataid'] == new_home_to_plot]['state'].iloc[0]
+            print('TRUE')
+            if state == 'NY':
+                date_slider.start = date(2019, 5, 1)
+                date_slider.end = date(2019, 8, 20)
+                date_slider.value = (date(2019, 5, 1),date(2019, 8, 20))
+
+            if state == 'TX':
+                date_slider.start = date(2018,1,1)
+                date_slider.end = date(2018,12,31)
+                date_slider.value = (date(2018,1,1),date(2018,12,31))
+
+            if state == 'Italy':
+                date_slider.start = date(2019, 1, 7)
+                date_slider.end = date(2019,12, 7)
+                date_slider.value = (date(2019, 1, 7),date(2019,12, 7))
+                
+        home_to_plot = new_home_to_plot
+        daterange_raw = list(date_slider.value_as_datetime)
+        daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
+
+
         ## SRC Updates
-        new_src1 = plot1_data(home_id_to_plot, daterange=daterange_to_plot,
+        new_src1 = plot1_data(new_home_to_plot, daterange=daterange_to_plot,
                 data=data_type_to_plot, xaxis=granularity_to_plot)
 
-        new_src2 = plot2_data(home_id_to_plot, daterange=daterange_to_plot, 
+        new_src2 = plot2_data(new_home_to_plot, daterange=daterange_to_plot, 
                 weekdays=exclude_days_to_plot, data=data_type_to_plot,xaxis=avg_to_plot)
         
         src1.data.update(new_src1.data)
         src2.data.update(new_src2.data)
 
-
-        ## plot 2 updates: 
-        if avg_to_plot == 'avgday':
-            plot2.title.text = f'Average Weekly {data_selector} Profile of Home {home_id_to_plot}'
-            plot2.xaxis.axis_label = 'Day of the week'
-            
-
-        if avg_to_plot == 'avghour':
-            plot2.title.text = f'Average Hourly {data_selector} Profile of Home {home_id_to_plot}'
-            plot2.xaxis.axis_label = 'Hours of Day'
-            
-
-        ## Update DateRange Slider
-        
-        startDate = filterData[filterData['dataid'] == home_id_to_plot].head(1)['time'].dt.date.iloc[0]
-        endDate = filterData[filterData['dataid'] == home_id_to_plot].tail(1)['time'].dt.date.iloc[0]
-        date_range_slider.start = startDate
-        date_range_slider.end = endDate
+        #startDate = filterData[filterData['dataid'] == new_home_to_plot].head(1)['time'].dt.date.iloc[0]
+        #endDate = filterData[filterData['dataid'] == new_home_to_plot].tail(1)['time'].dt.date.iloc[0]
+        #date_range_slider.start = startDate
+        #date_range_slider.end = endDate
 
 
     ## Widgets ##
@@ -257,9 +277,9 @@ def first_tab_create(filterData):
 
 
     ## Date Range Selector
-    date_range_slider = DateRangeSlider(title="Date Range: ", start=date(2019, 5, 1), end=date(2019, 8, 20),
+    date_slider = DateRangeSlider(title="Date Range: ", start=date(2019, 5, 1), end=date(2019, 8, 20),
                                         value=(date(2019, 5, 1), date(2019, 8, 20)), step=1, callback_policy = 'mouseup',max_width = 260)
-    date_range_slider.on_change("value_throttled", update)
+    date_slider.on_change("value_throttled", update)
 
 
     ## Data Options
@@ -290,7 +310,7 @@ def first_tab_create(filterData):
             sizing_mode="scale_width")  # data_type_selector)
     rightControls = WidgetBox(analysis,rightTextBottom,weekdays_checkbox,
             sizing_mode="scale_width") 
-    bottomControls = WidgetBox(data_type_selector,home_id_selector, date_range_slider, 
+    bottomControls = WidgetBox(data_type_selector,home_id_selector, date_slider, 
             sizing_mode="scale_both") 
 
 

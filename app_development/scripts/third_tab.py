@@ -11,6 +11,8 @@ from bokeh.models import Legend, LegendItem
 
 from pmdarima import auto_arima
 
+home_to_plot = 5679
+
 def third_tab_create(filterData):
     all_min_date = filterData.groupby('dataid').agg(min)["time"]
     all_max_date = filterData.groupby('dataid').agg(max)["time"]
@@ -30,11 +32,18 @@ def third_tab_create(filterData):
         daterange = [startDate,endDate]
         houseData = houseData.loc[daterange[0]:daterange[1],:] 
         houseData[data] = houseData[data] * 60 * 15 / 3600 # kWh
-        aveProfile = houseData.groupby(houseData['time'].dt.time).mean()
+        #houseData[data] = ( houseData[data] > .01 ) * houseData[data]
+        weekdays = houseData[houseData.index.dayofweek < 5]
+        weekends = houseData[houseData.index.dayofweek > 4]
+        weekdayProfile = weekdays.groupby(weekdays['time'].dt.time).mean()
+        weekendProfile = weekends.groupby(weekends['time'].dt.time).mean()
         houseData['detrend'] = houseData[data]
 
         for i in range(0,len(houseData)):
-            houseData['detrend'][i] = houseData['detrend'][i] - aveProfile[aveProfile.index == houseData['time'].dt.time[i]][data]
+            if houseData['time'][i].dayofweek > 4:
+                houseData['detrend'][i] = houseData['detrend'][i] - weekendProfile[weekendProfile.index == houseData['time'].dt.time[i]][data]
+            else:
+                houseData['detrend'][i] = houseData['detrend'][i] - weekdayProfile[weekdayProfile.index == houseData['time'].dt.time[i]][data]
 
         trainData = houseData['detrend']
 
@@ -53,14 +62,21 @@ def third_tab_create(filterData):
 
         test['arima'] = future_forecast
 
+        if pd.to_datetime(date).dayofweek > 4:
+            aveProfile = weekendProfile
+        else:
+            aveProfile = weekdayProfile
+
         for i in range(0,len(test)):
             test['arima'][i] = test['arima'][i] + aveProfile[aveProfile.index == test['time'].dt.time[i]][data]
 
         test['error'] = abs( test[data] - test['arima'] )
+        #test['error'] = ( test['error'] > .03 ) * test['error']
         test = test.rename(columns={data:'data'})
         test = test.drop(columns = 'time')
 
-        mape = sum( abs( test['error'] / test['data'] ) ) / len (test)
+        #mape = 100 * sum( abs( test['error'] / test['data'] ) ) / len (test)
+        mape = 100 * sum( abs( test['error'] / test['data'].max() ) ) / len(test) 
 
         print(stepwise_model.summary())
 
@@ -82,12 +98,14 @@ def third_tab_create(filterData):
 
         plot1.add_layout(legend)
 
-        plot1.legend.title = f'MAPE = {round(mape1,3)}'
+        plot1.legend.title = f'Abs Error = {round(mape1,3)}%'
 
         return plot1
 
 
     def update(attr, old, new):
+        global home_to_plot
+
         data_selector = data_type_selector.labels[data_type_selector.active] 
 
         if data_selector == 'Net Load':
@@ -108,16 +126,14 @@ def third_tab_create(filterData):
 
         trainDays_to_plot = int(trainDays_input.value)
         date_to_plot = date_slider.value
-        home_id_to_plot = int(home_id_selector.value)
+        new_home_to_plot = int(home_id_selector.value) ###
 
-        plot1.title.text = f'{data_selector} forcasing of home {home_id_to_plot}'
+        plot1.title.text = f'{data_selector} forcasing of home {new_home_to_plot}'
 
-        print(date_to_plot)
-        print(str(filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date))
-        print(str(date_to_plot) not in str(filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date))
-
-        if str(date_to_plot) not in str(filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date):
-            state = filterData[filterData['dataid'] == home_id_to_plot]['state'].iloc[0]
+        #if str(date_to_plot) not in str(filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date):
+        if new_home_to_plot != home_to_plot:
+            state = filterData[filterData['dataid'] == new_home_to_plot]['state'].iloc[0]
+            print('TRUE')
             if state == 'NY':
                 date_to_plot = '2019-07-20'
                 date_slider.start = date(2019, 5, 1)
@@ -128,18 +144,20 @@ def third_tab_create(filterData):
                 date_to_plot = '2018-07-20'
                 date_slider.start = date(2018,1,1)
                 date_slider.end = date(2018,12,31)
-                date_slider.value = date(2018,7,20)
+                date_slider.value = date(2018,7,13)
 
             if state == 'Italy':
                 date_to_plot = '2019-07-20'
                 date_slider.start = date(2019, 1, 7)
                 date_slider.end = date(2019,12, 7)
-                date_slider.value = date(2019,7,20)
+                date_slider.value = date(2019,4,30)
 
-        new_src1,new_mape1 = arima(date = date_to_plot, house = home_id_to_plot, data = data_to_plot, trainDays = trainDays_to_plot)
+        new_src1,new_mape1 = arima(date = date_to_plot, house = new_home_to_plot, data = data_to_plot, trainDays = trainDays_to_plot)
         src1.data.update(new_src1.data)
 
-        plot1.legend.title = f'MAPE = {round(new_mape1,3)}'
+        plot1.legend.title = f'Abs Error = {round(new_mape1,3)}%'
+        
+        home_to_plot = new_home_to_plot
 
     ## Initialize src and plot
     src1,mape1 = arima(date = '2019-07-20', house = 5679, data = 'solar', trainDays = 2)

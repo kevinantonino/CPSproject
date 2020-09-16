@@ -127,7 +127,7 @@ def first_tab_create(filterData):
                     x_axis_label = 'Day of the week',
                     y_axis_label = 'Net Load [kWh]')
 
-        plot2.plot_width = 600
+        plot2.plot_width = 1000
         plot2.plot_height = 400
         plot2.vbar(x='axis', top = 'data', width=1, source=src) 
         
@@ -243,7 +243,6 @@ def first_tab_create(filterData):
     ## Granularity
     granularity_1 = RadioGroup(
         labels=["15 Minutes", "Hour", "Day", "Week", "Month"], active=0,
-            background ='paleturquoise',
             max_width = 125)
     
     granularity_1.on_change('active',
@@ -252,8 +251,7 @@ def first_tab_create(filterData):
     ## Analysis button
     analysis = RadioGroup(
             labels=['Weekly Pattern','Daily Pattern'], active=0,
-            background = 'aquamarine',
-            max_width = 125)
+            )
     
     analysis.on_change('active',
                         update)
@@ -261,8 +259,7 @@ def first_tab_create(filterData):
     ## Weekday Checkbox
     weekdays_checkbox = CheckboxGroup(labels=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
             active = [0,1,2,3,4,5,6],
-            background = 'lemonchiffon',
-            max_width = 125)
+            )
 
     weekdays_checkbox.on_change('active',update) # Run the whole update
 
@@ -272,20 +269,19 @@ def first_tab_create(filterData):
 
     home_ids_available = list(map(str, home_ids_available))
     home_id_selector = Dropdown(label="Home ID", button_type="warning", 
-            menu=home_ids_available, value="27", max_width = 260)
+            menu=home_ids_available, value="27")
     home_id_selector.on_change('value',update)
 
 
     ## Date Range Selector
     date_slider = DateRangeSlider(title="Date Range: ", start=date(2019, 5, 1), end=date(2019, 8, 20),
-                                        value=(date(2019, 5, 1), date(2019, 8, 20)), step=1, callback_policy = 'mouseup',max_width = 260)
+                                        value=(date(2019, 5, 1), date(2019, 8, 20)), step=1, callback_policy = 'mouseup', width = 1000)
     date_slider.on_change("value_throttled", update)
 
 
     ## Data Options
     data_type_selector = RadioGroup(labels=["Net Load","Load","PV Generation","Electric Vehicle Consumption"],
-            background='orchid',
-            active=0,max_width = 260)
+            active=0)
     data_type_selector.on_change('active', update)
 
     
@@ -302,29 +298,30 @@ def first_tab_create(filterData):
 
     plot2 = plot2_plot(src2)
 
+    #
 
     ## Put controls in a single element (add more later to format)
-    rightTextBottom = Paragraph(text = 'Day-of-week Selection',width = 100)  
-
-    leftControls = WidgetBox(granularity_1, 
-            sizing_mode="scale_width")  # data_type_selector)
-    rightControls = WidgetBox(analysis,rightTextBottom,weekdays_checkbox,
-            sizing_mode="scale_width") 
-    bottomControls = WidgetBox(data_type_selector,home_id_selector, date_slider, 
-            sizing_mode="scale_both") 
 
 
-    leftText = Paragraph(text = 'Plot 1 Options: Sampling Rate', width=100)
-    rightText = Paragraph(text = 'Plot 2 Options: Time Resolution',width = 100)
-    
+    controls_plot1_text = Paragraph(text= 'Sampling Rate')
+    controls_plot1 =WidgetBox(controls_plot1_text, granularity_1,
+                             sizing_mode="scale_width")  # data_type_selector)
+    plot1_description = Paragraph(text='INPUT DESCRIPTION HERE')
 
-    left = column(leftText,leftControls)
-    right = column(rightText,rightControls)
+    controls_plot2_text = Paragraph(text='Pattern Type')
+    controls_plot2_text2 = Paragraph(text='Days Included')
+    controls_plot2 = WidgetBox(controls_plot2_text, analysis, controls_plot2_text2,weekdays_checkbox,
+                              sizing_mode="scale_width")
 
-    controls = column(row(left,right),bottomControls)
+    plot2_description = Paragraph(text='INPUT DESCRIPTION HERE')
+
+    row1 = row(home_id_selector, data_type_selector, sizing_mode="scale_height")
+    row2= row(date_slider)
+    row3= row(plot1,controls_plot1)
+    row4 = row(plot2,controls_plot2)
 
     ## Create a row layout
-    layout = column(row(controls,plot2),plot1)
+    layout = column(row1,row2, row3, row4)
 
 
     ## Make a tab with the layout

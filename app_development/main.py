@@ -8,6 +8,7 @@ from os.path import dirname, join
 # Bokeh basics
 from bokeh.io import curdoc
 from bokeh.models.widgets import Tabs
+from bokeh.palettes import Spectral5
 
 
 # Each tab is drawn by one script
@@ -49,7 +50,7 @@ filterData = filterData[filterData['state'] == 'NY']
 filterData = filterData.append(b)
 
 
-## Enel
+## Enelu
 enelData = pd.read_csv(join(dirname(__file__), 'data', 'cleaned_enel_data_with_nans.csv'))
 enelData = enelData.drop(columns = 'local_15min')
 enelData['time'] = pd.to_datetime(enelData['time'], utc = True)
@@ -63,10 +64,12 @@ filterData['time'] = pd.to_datetime(filterData['time'], utc = True)
 # Create each of the tabs
 tab1 = first_tab_create(filterData)
 tab2 = second_tab_create(filterData)
-tab3 = third_tab_create(filterData)
+# tab3 = third_tab_create(filterData)
 
 # Put all the tabs into one application
-tabs = Tabs(tabs = [tab1,tab2,tab3])
+tabs = Tabs(tabs = [tab1,tab2]) #tabs = Tabs(tabs = [tab1,tab2,tab3])
+
 
 # Put the tabs in the current document for display
 curdoc().add_root(tabs)
+curdoc().title = "Energy App"

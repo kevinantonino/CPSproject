@@ -269,7 +269,7 @@ def first_tab_create(filterData):
 
     home_ids_available = list(map(str, home_ids_available))
     home_id_selector = Dropdown(label="Home ID", button_type="warning", 
-            menu=home_ids_available, value="27")
+            menu=home_ids_available, value="27",max_height = 150, width=300)
     home_id_selector.on_change('value',update)
 
 
@@ -281,7 +281,7 @@ def first_tab_create(filterData):
 
     ## Data Options
     data_type_selector = RadioGroup(labels=["Net Load","Load","PV Generation","Electric Vehicle Consumption"],
-            active=0)
+            active=0,max_height = 150)
     data_type_selector.on_change('active', update)
 
     

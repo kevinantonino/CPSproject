@@ -126,7 +126,7 @@ def second_tab_create(filterData):
         plot3 = figure(title = 'Equilibrium Price',x_axis_type="datetime", x_axis_label="Time",
             y_axis_label="Price")
         plot3.line('time','grid',source = src)
-        plot3.plot_width = 500
+        plot3.plot_width = 1400
         plot3.plot_height = 300
         plot3.yaxis.ticker = [0,1]
         plot3.yaxis.major_label_overrides = {0: '5 ¢', 1: '20 ¢'}
@@ -138,7 +138,7 @@ def second_tab_create(filterData):
                     x_axis_label = 'No Sharing / Sharing Energy Consumption',
                     y_axis_label = 'Energy [kWh]')
 
-        plot4.plot_width =700
+        plot4.plot_width = 700
         plot4.plot_height = 300
         plot4.vbar(x='axis', top = 'data', color = 'colors',width=1, source=src)
         plot4.xgrid.grid_line_color = None
@@ -154,7 +154,7 @@ def second_tab_create(filterData):
                     x_axis_label = 'No Sharing Bill / Sharing Bill',
                     y_axis_label = 'Dollar Cost [$]')
 
-        plot5.plot_width =700
+        plot5.plot_width = 700
         plot5.plot_height = 300
         plot5.vbar(x='axis', top = 'data', color = 'colors',width=1, source=src)
         plot5.xgrid.grid_line_color = None
@@ -221,7 +221,6 @@ def second_tab_create(filterData):
     ## Granularity Button
     granularity_1 = RadioGroup(
         labels=["15 Minutes", "Hour", "Day", "Week", "Month"], active=0,
-            background ='paleturquoise',
             max_width = 100)
     granularity_1.on_change('active',
                             update)
@@ -232,14 +231,14 @@ def second_tab_create(filterData):
 
     date_range_slider = DateRangeSlider(title="Date Range: ", 
             start=startDate, end=endDate, value=(startDate,
-                endDate), step=1, callback_policy = 'mouseup',max_width = 250)
+                endDate), step=1, callback_policy = 'mouseup',width = 1400)
     date_range_slider.on_change("value_throttled", update)
 
     ## Home Selector
     home_ids_available = np.unique(filterData[filterData['state'] == 'NY']['dataid'])
 
     home_ids_available = list(map(str, home_ids_available))
-    home_id_selector = Dropdown(label="Home ID", button_type="warning", menu=home_ids_available, value="5679", max_width = 350)
+    home_id_selector = Dropdown(label="Home ID", button_type="warning", menu=home_ids_available, value="5679", max_height = 100)
     home_id_selector.on_change('value',update)
 
     ## Text input
@@ -252,7 +251,6 @@ def second_tab_create(filterData):
 
     ## Community Options
     community_selector = RadioGroup(labels=["NY","TX",'Italy'],
-            background='orchid',
             active=0,max_width = 200)
     community_selector.on_change('active', update)
 
@@ -274,15 +272,26 @@ def second_tab_create(filterData):
             ]
     data_table = DataTable(source=src6,columns = columns,width=350,height=50)
 
+    table_title = Paragraph(text='Value of Solar Energy [¢/kWh]', width=350, max_height=50)
 
-    # Create a layout
-    
-    table_title = Paragraph(text = 'Value of Solar Energy [¢/kWh]', width=350,max_height = 50)
+    # Create Layout
+    controls_row3= column (table_title,data_table)
 
-    controls = WidgetBox(column(row(granularity_1,column(date_range_slider,community_selector)),
-        home_id_selector,text_input,table_title,data_table))
+    row1=row(plot4,plot5)
+    row2=row(plot3)
+    row3=row(date_range_slider)
+    row4=row(community_selector,home_id_selector, granularity_1,text_input, controls_row3, sizing_mode="scale_height")
 
-    layout = row(column(controls,plot3),column(plot4,plot5))
+
+    layout=column(row1,row2,row3,row4)
+
+    # # Create a layout
+    #
+    #
+    # controls = WidgetBox(column(row(granularity_1,column(date_range_slider,community_selector)),
+    #     home_id_selector,text_input,table_title,data_table))
+    #
+    # layout = row(column(controls,plot3),column(plot4,plot5))
 
     # Make a tab with the layout
     tab = Panel(child=layout, title='Market Analysis')

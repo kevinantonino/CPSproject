@@ -51,8 +51,8 @@ def third_tab_create(filterData):
                 max_p=3, max_q=3, m=7,
                 start_P=0, seasonal=True,
                 d=1, D=1, trace=True,
-                error_action='ignore',  
-                suppress_warnings=True, 
+                error_action='ignore',
+                suppress_warnings=True,
                 stepwise=True)
 
         train = houseData[data].loc[startDate:date]
@@ -76,7 +76,7 @@ def third_tab_create(filterData):
         test = test.drop(columns = 'time')
 
         #mape = 100 * sum( abs( test['error'] / test['data'] ) ) / len (test)
-        mape = 100 * sum( abs( test['error'] / test['data'].max() ) ) / len(test) 
+        mape = 100 * sum( abs( test['error'] / test['data'].max() ) ) / len(test)
 
         print(stepwise_model.summary())
 
@@ -89,6 +89,7 @@ def third_tab_create(filterData):
         a = plot1.line('time','data',source = src, color = 'blue')
         b = plot1.line('time','arima',source = src, color = 'green')
         c = plot1.line('time','error',source = src, color = 'red')
+        plot1.plot_width = 1300
 
         legend = Legend(items=[
             LegendItem(label="Raw Data",renderers=[a],index=0),
@@ -166,17 +167,16 @@ def third_tab_create(filterData):
     ## Date Slider
     date_slider = DateSlider(title="Date: ", 
             start=date(2019, 5, 1), end=date(2019, 8, 20),value=date(2019, 7, 20),
-                step=1, callback_policy = 'mouseup',max_width = 250)
+                step=1, callback_policy = 'mouseup',width = 1300)
     date_slider.on_change("value_throttled", update)
 
     ## Text input
-    trainDays_input = TextInput(value='2', title='Training Days',max_width = 75,max_height = 50)
+    trainDays_input = TextInput(value='2', title='Training Days',max_width = 200,max_height = 50)
     trainDays_input.on_change('value',update)
 
     ## Data Options
     data_type_selector = RadioGroup(labels=["PV Generation","Load","Net Load","Electric Vehicle Consumption"],
-            background='orchid',
-            active=0,max_width = 260)
+            active=0)
     data_type_selector.on_change('active', update)
 
     ## Home Selector
@@ -184,11 +184,16 @@ def third_tab_create(filterData):
     home_ids_available = np.unique(filterData['dataid'])
     
     home_ids_available = list(map(str, home_ids_available))
-    home_id_selector = Dropdown(label="Home ID", button_type="warning", menu=home_ids_available, value="5679", max_width = 350)
+    home_id_selector = Dropdown(label="Home ID", button_type="warning", menu=home_ids_available, value="5679", max_width = 200)
     home_id_selector.on_change('value',update)
 
+    row1 = row(plot1, column(data_type_selector, trainDays_input,home_id_selector,sizing_mode="scale_width"))
+    row2 = row(date_slider)
+
+
     ## Layout
-    layout = row(plot1,column(row(date_slider,trainDays_input),home_id_selector,data_type_selector))
+    layout= column(row1,row2)
+    # layout = row(plot1,column(row(date_slider,trainDays_input),home_id_selector,data_type_selector))
 
     tab = Panel(child=layout, title='Forecasting')
 

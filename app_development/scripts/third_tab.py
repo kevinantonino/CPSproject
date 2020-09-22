@@ -193,7 +193,6 @@ def third_tab_create(filterData):
 
     ## Layout
     layout= column(row1,row2)
-    # layout = row(plot1,column(row(date_slider,trainDays_input),home_id_selector,data_type_selector))
 
     tab = Panel(child=layout, title='Forecasting')
 

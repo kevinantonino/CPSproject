@@ -8,7 +8,6 @@ from os.path import dirname, join
 # Bokeh basics
 from bokeh.io import curdoc
 from bokeh.models.widgets import Tabs
-from bokeh.palettes import Spectral5
 
 
 # Each tab is drawn by one script
@@ -31,6 +30,13 @@ b['time'] = a.loc[:]
 filterData = filterData[filterData['state'] == 'TX']
 filterData = filterData.append(b)
 
+## TX removing Tz info
+a = pd.to_datetime(filterData[filterData['state'] == 'TX']['time'], utc = True)  - pd.DateOffset(hours=6)
+b = filterData[filterData['state'] == 'TX']
+b['time'] = a.loc[:]
+filterData = filterData[filterData['state'] == 'NY']
+filterData = filterData.append(b)
+
 
 ## NY Aggregate house
 agg = filterData.groupby(filterData[filterData['state']=='NY']['time']).sum()
@@ -41,16 +47,25 @@ agg['state'] = 'NY'
 agg = agg[['car1','grid','solar','time','dataid','state','load']]
 filterData = filterData.append(agg)
 
+## TX Aggregate house
+agg = filterData.groupby(filterData[filterData['state']=='TX']['time']).sum()
+agg['dataid'] = 2
+agg['time'] = agg.index
+agg['time'] = pd.to_datetime(agg['time'])
+agg['state'] = 'TX'
+agg = agg[['car1','grid','solar','time','dataid','state','load']]
+filterData = filterData.append(agg)
 
-## TX removing Tz info
-a = pd.to_datetime(filterData[filterData['state'] == 'TX']['time'], utc = True)  - pd.DateOffset(hours=6)
-b = filterData[filterData['state'] == 'TX']
-b['time'] = a.loc[:]
-filterData = filterData[filterData['state'] == 'NY']
-filterData = filterData.append(b)
+## TX Aggregate house
+agg = filterData.groupby(filterData['time']).sum()
+agg['dataid'] = 3
+agg['time'] = agg.index
+agg['time'] = pd.to_datetime(agg['time'])
+agg['state'] = 'TXNY'
+agg = agg[['car1','grid','solar','time','dataid','state','load']]
+filterData = filterData.append(agg)
 
-
-## Enelu
+## Enel
 enelData = pd.read_csv(join(dirname(__file__), 'data', 'cleaned_enel_data_with_nans.csv'))
 enelData = enelData.drop(columns = 'local_15min')
 enelData['time'] = pd.to_datetime(enelData['time'], utc = True)
@@ -69,7 +84,5 @@ tab3 = third_tab_create(filterData)
 # Put all the tabs into one application
 tabs = Tabs(tabs = [tab1,tab2,tab3])
 
-
 # Put the tabs in the current document for display
 curdoc().add_root(tabs)
-curdoc().title = "Energy App"

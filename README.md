@@ -9,7 +9,18 @@ To run the Application on a local server:
 - navigate to CPSproject directory
 - type in: "bokeh serve --show app_development"
 
-bokeh needs to be installed of course
+Operation requirements (these packages have been proven to work):
 
+Bokeh 1.4.0
+Tornado 6.0.3
+Python 3.7.4
+Pandas 0.25.1
+Pmdarima 1.7.0
+
+Make sure you have a data folder with correct data !
+
+On caleb's computer run:
+cd C:\Users\Caleb\Dropbox\ENEL\Tool_with_new_enel
 cd C:\Users\Caleb\Documents\GitHub\CPSproject
+
 bokeh serve --show app_development

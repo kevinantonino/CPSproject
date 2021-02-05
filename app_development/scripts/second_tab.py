@@ -187,8 +187,8 @@ def second_tab_create(filterData):
                 home_id_to_plot = 118000000008
 
         ## DateRange updates
-        startDate = filterData[filterData['dataid'] == home_id_to_plot].head(1)['time'].dt.date.iloc[0]
-        endDate = filterData[filterData['dataid'] == home_id_to_plot].tail(1)['time'].dt.date.iloc[0]
+        startDate = filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date.iloc[0]
+        endDate = filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date.iloc[-1]
         date_range_slider.start = startDate
         date_range_slider.end = endDate
         if home_id_to_plot not in home_ids:
@@ -226,8 +226,8 @@ def second_tab_create(filterData):
                             update)
     
     ## Daterange Slider Button
-    startDate = filterData[filterData['dataid'] == 5679].head(1)['time'].dt.date.iloc[0]
-    endDate = filterData[filterData['dataid'] == 5679].tail(1)['time'].dt.date.iloc[0]
+    startDate = filterData[filterData['dataid'] == 5679]['time'].dt.date.iloc[0]
+    endDate = filterData[filterData['dataid'] == 5679]['time'].dt.date.iloc[-1]
 
     date_range_slider = DateRangeSlider(title="Date Range: ", 
             start=startDate, end=endDate, value=(startDate,

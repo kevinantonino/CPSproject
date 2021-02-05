@@ -200,23 +200,18 @@ def first_tab_create(filterData):
 
         ## Update DateRange Slider
         if new_home_to_plot != home_to_plot:
-            state = filterData[filterData['dataid'] == new_home_to_plot]['state'].iloc[0]
-            print('TRUE')
-            if state == 'NY':
-                date_slider.start = date(2019, 5, 1)
-                date_slider.end = date(2019, 8, 20)
-                date_slider.value = (date(2019, 5, 1),date(2019, 8, 20))
+        
+            startDate = filterData[filterData['dataid'] == new_home_to_plot]['time'].iloc[0]
+            endDate = filterData[filterData['dataid'] == new_home_to_plot]['time'].iloc[-1]
 
-            if state == 'TX':
-                date_slider.start = date(2018,1,1)
-                date_slider.end = date(2018,12,31)
-                date_slider.value = (date(2018,1,1),date(2018,12,31))
+            startDate = str(startDate)[0:10]
+            endDate = str(endDate)[0:10]
 
-            if state == 'Italy':
-                date_slider.start = date(2019, 1, 7)
-                date_slider.end = date(2019,12, 7)
-                date_slider.value = (date(2019, 1, 7),date(2019,12, 7))
-                
+            date_slider.start = date(int(startDate[0:4]),int(startDate[5:7]),int(startDate[8:10]))
+            date_slider.end = date(int(endDate[0:4]),int(endDate[5:7]),int(endDate[8:10]))
+            date_slider.value =(date(int(startDate[0:4]),int(startDate[5:7]),int(startDate[8:10])), 
+                    date(int(endDate[0:4]),int(endDate[5:7]),int(endDate[8:10])))     
+
         home_to_plot = new_home_to_plot
         daterange_raw = list(date_slider.value_as_datetime)
         daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
@@ -289,7 +284,7 @@ def first_tab_create(filterData):
 
     xaxis = '15 Minutes'
 
-    src1 = plot1_data(int(home_ids_available[0]), ['2019-05-01', '2019-08-20'], 'grid',
+    src1 = plot1_data(27, ['2019-05-01', '2019-08-20'], 'grid',
                       xaxis)  # start with a data range we know is correct
     
     plot1 = plot1_plot(src1)

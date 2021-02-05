@@ -26,14 +26,14 @@ filterData = filterData.rename(columns={"local_15min":"time"})
 ## NY Removing Tz info
 a = pd.to_datetime(filterData[filterData['state'] == 'NY']['time'], utc = True)  - pd.DateOffset(hours=5)
 b = filterData[filterData['state'] == 'NY']
-b['time'] = a.loc[:]
+b['time'].loc[:] = a.loc[:]
 filterData = filterData[filterData['state'] == 'TX']
 filterData = filterData.append(b)
 
 ## TX removing Tz info
 a = pd.to_datetime(filterData[filterData['state'] == 'TX']['time'], utc = True)  - pd.DateOffset(hours=6)
 b = filterData[filterData['state'] == 'TX']
-b['time'] = a.loc[:]
+b['time'].loc[:] = a.loc[:]
 filterData = filterData[filterData['state'] == 'NY']
 filterData = filterData.append(b)
 
@@ -73,8 +73,19 @@ enelData['state'] = 'Italy'
 enelData = enelData[['car1','grid','solar','time','dataid','state','load']]
 filterData = filterData.append(enelData)
 
+# new Enel with 15 min resample
+newEnel = pd.read_csv(join(dirname(__file__), 'data', 'new_Enel_15min_resamp.csv'))
+#newEnel.index() = newEnel['time']
+#newEnel = newEnel.drop(columns = 'time')
+
+newEnel=newEnel.loc[newEnel["dataid"].notna(),:]
+
+newEnel["dataid"]= newEnel["dataid"].astype(float)
+newEnel["dataid"]= newEnel["dataid"].astype(int)
+filterData = filterData.append(newEnel)
 
 filterData['time'] = pd.to_datetime(filterData['time'], utc = True)
+
 
 # Create each of the tabs
 tab1 = first_tab_create(filterData)
@@ -86,3 +97,4 @@ tabs = Tabs(tabs = [tab1,tab2,tab3])
 
 # Put the tabs in the current document for display
 curdoc().add_root(tabs)
+

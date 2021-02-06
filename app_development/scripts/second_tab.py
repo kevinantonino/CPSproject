@@ -178,13 +178,13 @@ def second_tab_create(filterData):
         home_id_selector.menu = home_ids_available
         home_id_to_plot = int(home_id_selector.value)
 
-        if home_id_to_plot not in home_ids:
-            if community_to_plot == 'NY':
-                home_id_to_plot = 5679
-            if community_to_plot == 'TX':
-                home_id_to_plot = 661
-            if community_to_plot == 'Italy':
-                home_id_to_plot = 118000000008
+        # if home_id_to_plot not in home_ids:
+        #     if community_to_plot == 'NY':
+        #         home_id_to_plot = 5679
+        #     if community_to_plot == 'TX':
+        #         home_id_to_plot = 661
+        #     if community_to_plot == 'Italy':
+        #         home_id_to_plot = 500
 
         ## DateRange updates
         startDate = filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date.iloc[0]
@@ -250,7 +250,7 @@ def second_tab_create(filterData):
     text_input = WidgetBox(row(pi_u_input,pi_nm_input))
 
     ## Community Options
-    community_selector = RadioGroup(labels=["NY","TX",'Italy'],
+    community_selector = RadioGroup(labels=list(np.unique(filterData['state'])),
             active=0,max_width = 200)
     community_selector.on_change('active', update)
 

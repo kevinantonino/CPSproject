@@ -65,15 +65,18 @@ agg['state'] = 'TXNY'
 agg = agg[['car1','grid','solar','time','dataid','state','load']]
 filterData = filterData.append(agg)
 
-## Enel
-enelData = pd.read_csv(join(dirname(__file__), 'data', 'cleaned_enel_data_with_nans.csv'))
-enelData = enelData.drop(columns = 'local_15min')
-enelData['time'] = pd.to_datetime(enelData['time'], utc = True)
-enelData['state'] = 'Italy'
-enelData = enelData[['car1','grid','solar','time','dataid','state','load']]
-filterData = filterData.append(enelData)
+#took out original enel data because solar readings do not make sense
+# ## Enel
+# enelData = pd.read_csv(join(dirname(__file__), 'data', 'cleaned_enel_data_with_nans.csv'))
+# enelData = enelData.drop(columns = 'local_15min')
+# enelData['time'] = pd.to_datetime(enelData['time'], utc = True)
+# enelData['state'] = 'Italy'
+# enelData = enelData[['car1','grid','solar','time','dataid','state','load']]
+# filterData = filterData.append(enelData)
 
-# new Enel with 15 min resample
+
+# new Enel with 15 min resample (79 homes, id 500 - 609)
+
 newEnel = pd.read_csv(join(dirname(__file__), 'data', 'new_Enel_15min_resamp.csv'))
 #newEnel.index() = newEnel['time']
 #newEnel = newEnel.drop(columns = 'time')
@@ -82,9 +85,20 @@ newEnel=newEnel.loc[newEnel["dataid"].notna(),:]
 
 newEnel["dataid"]= newEnel["dataid"].astype(float)
 newEnel["dataid"]= newEnel["dataid"].astype(int)
-filterData = filterData.append(newEnel)
 
+#columns of solar, car1, load, grid are in W. need to convert to kW
+newEnel["car1"] = newEnel["car1"]/1000
+newEnel["solar"] = newEnel["solar"]/1000
+newEnel["load"] = newEnel["load"]/1000
+newEnel["grid"] = newEnel["grid"]/1000
+
+
+
+
+filterData = filterData.append(newEnel)
 filterData['time'] = pd.to_datetime(filterData['time'], utc = True)
+
+
 
 
 # Create each of the tabs
@@ -92,8 +106,9 @@ tab1 = first_tab_create(filterData)
 tab2 = second_tab_create(filterData)
 tab3 = third_tab_create(filterData)
 
-# Put all the tabs into one application
+
 tabs = Tabs(tabs = [tab1,tab2,tab3])
+
 
 # Put the tabs in the current document for display
 curdoc().add_root(tabs)

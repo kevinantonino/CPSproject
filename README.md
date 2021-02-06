@@ -20,7 +20,8 @@ Pmdarima 1.7.0
 Make sure you have a data folder with correct data !
 
 On caleb's computer run:
-cd C:\Users\Caleb\Dropbox\ENEL\Tool_with_new_enel
+
 cd C:\Users\Caleb\Documents\GitHub\CPSproject
 
+cd C:\Users\Caleb\Dropbox\ENEL\Tool_with_new_enel
 bokeh serve --show app_development

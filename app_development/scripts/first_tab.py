@@ -138,6 +138,7 @@ def first_tab_create(filterData):
     def update(attr, old, new):  # still a little unsure how the update function gets values passed in implicitly
 
         global home_to_plot
+        # global state_selector
         
         daterange_to_plot = ['2019-05-01', '2019-08-20']
         data_type_to_plot = 'grid'
@@ -147,7 +148,27 @@ def first_tab_create(filterData):
         granularity_to_plot = granularity_1.labels[granularity_1.active]
         new_home_to_plot = int(home_id_selector.value)
 
-        data_selector = data_type_selector.labels[data_type_selector.active] 
+        data_selector = data_type_selector.labels[data_type_selector.active]
+
+        ## Update the country dropdown
+        country_selector.label = country_selector.value
+
+
+        ## Update the state dropdown
+
+        states_available = np.unique(filterData[filterData['country'] == country_selector.value]["state"])
+        states_available = states_available.tolist()
+        state_selector.menu = states_available
+        state_selector.label = state_selector.value
+
+
+        ## Update Homes Available
+
+        ## Home Updates
+        home_ids = np.unique(filterData[filterData['state'] == state_selector.value]['dataid'])
+        home_ids_available = list(map(str, home_ids))
+        home_id_selector.menu = home_ids_available
+
 
         ## plot updates: 
         plot1.title.text = f'{data_selector} Profile of Home {new_home_to_plot}'
@@ -263,9 +284,26 @@ def first_tab_create(filterData):
     home_ids_available = np.unique(filterData['dataid'])
 
     home_ids_available = list(map(str, home_ids_available))
-    home_id_selector = Dropdown(label="Home ID", button_type="warning", 
+    home_id_selector = Dropdown(label="Home ID", button_type="warning",
             menu=home_ids_available, value="27",max_height = 150, width=300)
     home_id_selector.on_change('value',update)
+
+    ## Country Selector
+    countries_available = np.unique(filterData['country'])
+    countries_available = countries_available.tolist()
+
+    country_selector = Dropdown(label="Country", button_type="warning",
+                                menu=countries_available, value="USA", max_height=150, width=300)
+    country_selector.on_change('value', update)
+
+    ## State Selector
+    states_available = np.unique(filterData[filterData['country'] == "USA"]["state"])
+    states_available = states_available.tolist()
+
+    state_selector = Dropdown(label="State", button_type="warning",
+                                menu=states_available, value="NY", max_height=150, width=300)
+    state_selector.on_change('value', update)
+
 
 
     ## Date Range Selector
@@ -310,7 +348,7 @@ def first_tab_create(filterData):
 
     plot2_description = Paragraph(text='INPUT DESCRIPTION HERE')
 
-    row1 = row(home_id_selector, data_type_selector, sizing_mode="scale_height")
+    row1 = row(country_selector,state_selector,home_id_selector, data_type_selector, sizing_mode="scale_height")
     row2= row(date_slider)
     row3= row(plot1,controls_plot1)
     row4 = row(plot2,controls_plot2)

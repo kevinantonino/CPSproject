@@ -170,21 +170,29 @@ def second_tab_create(filterData):
         granularity_to_plot = granularity_1.labels[granularity_1.active]
         pi_u_to_plot = int(pi_u_input.value) / 100
         pi_nm_to_plot = int(pi_nm_input.value) / 100
-        community_to_plot = community_selector.labels[community_selector.active]
+
+
+        ## Update the country dropdown
+        country_selector.label = country_selector.value
+
+
+        ## Update the state dropdown
+
+        states_available = np.unique(filterData[filterData['country'] == country_selector.value]["state"])
+        states_available = states_available.tolist()
+        state_selector.menu = states_available
+        state_selector.label = state_selector.value
+
+
+        ## Update Homes Available
 
         ## Home Updates
-        home_ids = np.unique(filterData[filterData['state'] == community_to_plot]['dataid'])
+        home_ids = np.unique(filterData[filterData['state'] == state_selector.value]['dataid'])
         home_ids_available = list(map(str, home_ids))
         home_id_selector.menu = home_ids_available
+        home_id_selector.label = home_id_selector.value
         home_id_to_plot = int(home_id_selector.value)
 
-        # if home_id_to_plot not in home_ids:
-        #     if community_to_plot == 'NY':
-        #         home_id_to_plot = 5679
-        #     if community_to_plot == 'TX':
-        #         home_id_to_plot = 661
-        #     if community_to_plot == 'Italy':
-        #         home_id_to_plot = 500
 
         ## DateRange updates
         startDate = filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date.iloc[0]
@@ -204,13 +212,13 @@ def second_tab_create(filterData):
         plot3.yaxis.major_label_overrides = {0: f'{pi_nm_input.value} ¢', 1: f'{pi_u_input.value} ¢'}
         
         ## SRC Updates
-        new_src3 = plot3_data(daterange = daterange_to_plot, xaxis = granularity_to_plot,community = community_to_plot)
+        new_src3 = plot3_data(daterange = daterange_to_plot, xaxis = granularity_to_plot,community = state_selector.value)
         new_src4 = barPlot_data(daterange = daterange_to_plot, house = home_id_to_plot, 
-                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 1,community = community_to_plot)
+                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 1,community = state_selector.value)
         new_src5 = barPlot_data(daterange = daterange_to_plot, house = home_id_to_plot, 
-                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 2,community = community_to_plot)
+                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 2,community = state_selector.value)
         new_src6 = barPlot_data(daterange = daterange_to_plot, house = home_id_to_plot, 
-                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 3,community = community_to_plot)
+                pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 3,community = state_selector.value)
 
 
         src3.data.update(new_src3.data)
@@ -234,6 +242,24 @@ def second_tab_create(filterData):
                 endDate), step=1, callback_policy = 'mouseup',width = 1400)
     date_range_slider.on_change("value_throttled", update)
 
+    ## Country Selector
+    countries_available = np.unique(filterData['country'])
+    countries_available = countries_available.tolist()
+
+    country_selector = Dropdown(label="Country", button_type="warning",
+                                menu=countries_available, value="USA", max_height=150, width=300)
+    country_selector.on_change('value', update)
+
+    ## State Selector
+    states_available = np.unique(filterData[filterData['country'] == "USA"]["state"])
+    states_available = states_available.tolist()
+
+    state_selector = Dropdown(label="State", button_type="warning",
+                                menu=states_available, value="NY", max_height=150, width=300)
+    state_selector.on_change('value', update)
+
+
+
     ## Home Selector
     home_ids_available = np.unique(filterData[filterData['state'] == 'NY']['dataid'])
 
@@ -249,10 +275,10 @@ def second_tab_create(filterData):
 
     text_input = WidgetBox(row(pi_u_input,pi_nm_input))
 
-    ## Community Options
-    community_selector = RadioGroup(labels=list(np.unique(filterData['state'])),
-            active=0,max_width = 200)
-    community_selector.on_change('active', update)
+    # ## Community Options
+    #     # community_selector = RadioGroup(labels=list(np.unique(filterData['state'])),
+    #     #         active=0,max_width = 200)
+    #     # community_selector.on_change('active', update)
 
 
     ## Initialize src and plot
@@ -277,10 +303,10 @@ def second_tab_create(filterData):
     # Create Layout
     controls_row3= column (table_title,data_table)
 
-    row1=row(plot4,plot5)
-    row2=row(plot3)
-    row3=row(date_range_slider)
-    row4=row(community_selector,home_id_selector, granularity_1,text_input, controls_row3, sizing_mode="scale_height")
+    row1=row(country_selector,state_selector,home_id_selector, granularity_1,text_input, controls_row3, sizing_mode="scale_height")
+    row2=row(date_range_slider)
+    row3=row(plot4,plot5)
+    row4=row(plot3)
 
 
     layout=column(row1,row2,row3,row4)

@@ -5,7 +5,7 @@ from bokeh.models import ColumnDataSource, Panel
 from bokeh.plotting import figure
 from bokeh.layouts import column, row
 from bokeh.models.tickers import FixedTicker
-from bokeh.models.widgets import CheckboxGroup, Slider, RangeSlider, Tabs, TableColumn, DataTable, RadioGroup,RadioButtonGroup, Dropdown,DateRangeSlider
+from bokeh.models.widgets import Button,CheckboxGroup, Slider, RangeSlider, Tabs, TableColumn, DataTable, RadioGroup,RadioButtonGroup, Dropdown,DateRangeSlider
 from bokeh.models import ColumnDataSource, DataTable, TableColumn
 from bokeh.layouts import WidgetBox
 from bokeh.models import TextInput
@@ -259,7 +259,6 @@ def second_tab_create(filterData):
     state_selector.on_change('value', update)
 
 
-
     ## Home Selector
     home_ids_available = np.unique(filterData[filterData['state'] == 'NY']['dataid'])
 
@@ -274,11 +273,6 @@ def second_tab_create(filterData):
     pi_nm_input.on_change('value',update)
 
     text_input = WidgetBox(row(pi_u_input,pi_nm_input))
-
-    # ## Community Options
-    #     # community_selector = RadioGroup(labels=list(np.unique(filterData['state'])),
-    #     #         active=0,max_width = 200)
-    #     # community_selector.on_change('active', update)
 
 
     ## Initialize src and plot
@@ -311,13 +305,6 @@ def second_tab_create(filterData):
 
     layout=column(row1,row2,row3,row4)
 
-    # # Create a layout
-    #
-    #
-    # controls = WidgetBox(column(row(granularity_1,column(date_range_slider,community_selector)),
-    #     home_id_selector,text_input,table_title,data_table))
-    #
-    # layout = row(column(controls,plot3),column(plot4,plot5))
 
     # Make a tab with the layout
     tab = Panel(child=layout, title='Market Analysis')

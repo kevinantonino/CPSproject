@@ -13,20 +13,24 @@ from pmdarima import auto_arima
 
 home_to_plot = 5679
 
-def third_tab_create(filterData):
-    all_min_date = filterData.groupby('dataid').agg(min)["time"]
-    all_max_date = filterData.groupby('dataid').agg(max)["time"]
+global state_dict 
+state_dict = {6:'TX', 5:'NY', 4:'Modena', 0:'Bergamo', 1:'Brescia', 2:'Catania', 3:'Mantova'}
 
-    #dummy_date = '2019-07-20'
-    #dummy_house = 5679
-    #dummy_data = 'solar'
-    #dummy_trainDays = 15
+def third_tab_create(filterData):
 
     #def arima(date = dummy_date, house = dummy_house , data = dummy_data,trainDays = dummy_trainDays):
-    def arima(date,house,data,trainDays):
-        houseData = filterData[filterData['dataid'] == house][['time',data]]
-        houseData = houseData.sort_values('time', ascending = True)
-        houseData.index = houseData['time']
+    def arima(date,state,data,trainDays):
+
+        houseData = filterData.groupby(filterData[filterData['state']==state]['time']).sum()
+        houseData['time'] = houseData.index
+        #houseData['time'] = pd.to_datetime(houseData['time'])
+        #houseData = houseData[['car1','grid','solar','time','load']]
+        houseData = houseData[['time',data]]
+
+        #houseData = filterData[filterData['dataid'] == house][['time',data]]
+        #houseData = houseData.sort_values('time', ascending = True)
+        houseData = houseData.sort_index()
+        #houseData.index = houseData['time']
         startDate = pd.to_datetime(date) + pd.DateOffset(days = -trainDays)
         endDate = pd.to_datetime(date) + pd.DateOffset(days = 1)
         daterange = [startDate,endDate]
@@ -105,7 +109,7 @@ def third_tab_create(filterData):
 
 
     def update(attr, old, new):
-        global home_to_plot
+        global home_to_plot,state_dict
 
         data_selector = data_type_selector.labels[data_type_selector.active] 
 
@@ -126,42 +130,38 @@ def third_tab_create(filterData):
             plot1.yaxis.axis_label  = 'Generation [kWh]'
 
         trainDays_to_plot = int(trainDays_input.value)
-        date_to_plot = date_slider.value
-        new_home_to_plot = int(home_id_selector.value) ###
+
+        new_home_to_plot = state_dict[community_selector.active]
+        print(new_home_to_plot)
+
+        #new_home_to_plot = int(home_id_selector.value) ###
 
         plot1.title.text = f'{data_selector} forcasing of home {new_home_to_plot}'
 
-        #if str(date_to_plot) not in str(filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date):
         if new_home_to_plot != home_to_plot:
-            state = filterData[filterData['dataid'] == new_home_to_plot]['state'].iloc[0]
-            print('TRUE')
-            if state == 'NY':
-                date_to_plot = '2019-07-20'
-                date_slider.start = date(2019, 5, 1)
-                date_slider.end = date(2019, 8, 20)
-                date_slider.value = date(2019,7,20)
+            startDate = filterData[filterData['state'] == new_home_to_plot]['time'].iloc[0].date() ##change
+            endDate = filterData[filterData['state'] == new_home_to_plot]['time'].iloc[-1].date()
+            middle = startDate + (endDate - startDate)/2
+            
+            date_slider.start = startDate
+            date_slider.end = endDate
+            date_slider.value = middle          
+            date_to_plot = str(middle)
 
-            if state == 'TX':
-                date_to_plot = '2018-07-20'
-                date_slider.start = date(2018,1,1)
-                date_slider.end = date(2018,12,31)
-                date_slider.value = date(2018,7,13)
+        #daterange_raw = list(date_slider.value_as_datetime)
+        #daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
+        
+        date_to_plot = date_slider.value
 
-            if state == 'Italy':
-                date_to_plot = '2019-07-20'
-                date_slider.start = date(2019, 1, 7)
-                date_slider.end = date(2019,12, 7)
-                date_slider.value = date(2019,4,30)
-
-        new_src1,new_mape1 = arima(date = date_to_plot, house = new_home_to_plot, data = data_to_plot, trainDays = trainDays_to_plot)
+        new_src1,new_mape1 = arima(date = date_to_plot, state = new_home_to_plot, data = data_to_plot, trainDays = trainDays_to_plot)
         src1.data.update(new_src1.data)
 
         plot1.legend.title = f'Abs Error = {round(new_mape1,3)}%'
-        
+
         home_to_plot = new_home_to_plot
 
     ## Initialize src and plot
-    src1,mape1 = arima(date = '2019-07-20', house = 5679, data = 'solar', trainDays = 2)
+    src1,mape1 = arima(date = '2019-07-20', state = 'NY', data = 'solar', trainDays = 2)
     plot1 = plot1_plot(src1,mape1)
 
     ## Date Slider
@@ -180,14 +180,19 @@ def third_tab_create(filterData):
     data_type_selector.on_change('active', update)
 
     ## Home Selector
-    #home_ids_available = np.unique(filterData[filterData['state'] == 'NY']['dataid'])
-    home_ids_available = np.unique(filterData['dataid'])
+    #home_ids_available = np.unique(filterData['dataid'])
     
-    home_ids_available = list(map(str, home_ids_available))
-    home_id_selector = Dropdown(label="Home ID", button_type="warning", menu=home_ids_available, value="5679", max_width = 200)
-    home_id_selector.on_change('value',update)
+    #home_ids_available = list(map(str, home_ids_available))
+    #home_id_selector = Dropdown(label="Home ID", button_type="warning", menu=home_ids_available, value="5679", max_width = 200)
+    #home_id_selector.on_change('value',update)
 
-    row1 = row(plot1, column(data_type_selector, trainDays_input,home_id_selector,sizing_mode="scale_width"))
+
+    ## Agg house selection
+    community_selector = RadioGroup(labels=list(np.unique(filterData['state'])),
+            active=6,max_width = 200)
+    community_selector.on_change('active', update)
+    
+    row1 = row(plot1, column(data_type_selector, trainDays_input,community_selector,sizing_mode="scale_width"))
     row2 = row(date_slider)
 
 

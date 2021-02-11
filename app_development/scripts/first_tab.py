@@ -38,7 +38,7 @@ def first_tab_create(filterData):
     dummy_granularity = '15 Minutes'
     dummy_analysis = 'avgday'
 
-    def plot1_data(houseData, daterange=dummy_daterange, data=dummy_data_type, xaxis=dummy_granularity):
+    def plot1_data(houseData, data=dummy_data_type, xaxis=dummy_granularity):
 
         # house is an integer number ex. 27
         # daterange is an array with 2 strings, start date and end date. ex. ['2019-05-01','2019-08-09']
@@ -77,7 +77,7 @@ def first_tab_create(filterData):
         return ColumnDataSource(houseData)
 
 
-    def plot2_data(houseData,daterange=dummy_daterange,weekdays = [],data=dummy_data_type,xaxis=dummy_analysis):
+    def plot2_data(houseData,weekdays = [],data=dummy_data_type,xaxis=dummy_analysis):
              #communityData = filterData[filterData['state'] == filterData[filterData['dataid'] == house]['state'].iloc[0]]
              # houseData = filterData[filterData['dataid'] == house].sort_values('time', ascending = True)[[data,'time']]
             #  that cuts the house, sorts by ascending time, and pulls out only the type of data that was requested
@@ -141,7 +141,6 @@ def first_tab_create(filterData):
         global home_to_plot
         # global state_selector
 
-        # daterange_to_plot = ['2019-05-01', '2019-08-20']
         data_type_to_plot = 'grid'
         exclude_days_to_plot = [0,1,2,3,4,5,6]
         avg_to_plot = 'avgday'
@@ -270,20 +269,14 @@ def first_tab_create(filterData):
             plot2.xaxis.axis_label = 'Hours of Day'
 
         ## SRC Updates
-        new_src1 = plot1_data(houseData, daterange=daterange_to_plot,
+        new_src1 = plot1_data(houseData,
                 data=data_type_to_plot, xaxis=granularity_to_plot)
 
-        new_src2 = plot2_data(houseData, daterange=daterange_to_plot,
+        new_src2 = plot2_data(houseData,
                 weekdays=exclude_days_to_plot, data=data_type_to_plot,xaxis=avg_to_plot)
 
         src1.data.update(new_src1.data)
         src2.data.update(new_src2.data)
-
-        #startDate = filterData[filterData['dataid'] == new_home_to_plot].head(1)['time'].dt.date.iloc[0]
-        #endDate = filterData[filterData['dataid'] == new_home_to_plot].tail(1)['time'].dt.date.iloc[0]
-        #date_range_slider.start = startDate
-        #date_range_slider.end = endDate
-
 
     ## Widgets ##
 
@@ -346,18 +339,15 @@ def first_tab_create(filterData):
     aggregate_selector.on_change('active',update)
 
 
-
     ## Date Range Selector
     date_slider = DateRangeSlider(title="Date Range: ", start=date(2019, 5, 1), end=date(2019, 8, 20),
                                         value=(date(2019, 5, 1), date(2019, 8, 20)), step=1, callback_policy = 'mouseup', width = 1000)
     date_slider.on_change("value_throttled", update)
 
-
     ## Data Options
     data_type_selector = RadioGroup(labels=["Net Load","Load","PV Generation","Electric Vehicle Consumption"],
             active=0,max_height = 150)
     data_type_selector.on_change('active', update)
-
     
     ## Initialize opening plot and data
 
@@ -374,30 +364,24 @@ def first_tab_create(filterData):
     initial_data.index = initial_data['time']
     initial_data = initial_data.loc[initial_daterange_to_plot[0]:initial_daterange_to_plot[1], :]  # cut to the days requested
 
-    src1 = plot1_data(initial_data, initial_daterange_to_plot, initial_data_type_to_plot,
+    src1 = plot1_data(initial_data, initial_data_type_to_plot,
                       xaxis)  # start with a data range we know is correct
     
     plot1 = plot1_plot(src1)
 
-    src2 = plot2_data(initial_data, initial_daterange_to_plot,[],initial_data_type_to_plot,initial_day_type)
+    src2 = plot2_data(initial_data,[],initial_data_type_to_plot,initial_day_type)
 
     plot2 = plot2_plot(src2)
 
 
     ## Put controls in a single element (add more later to format)
-
-
     controls_plot1_text = Paragraph(text= 'Sampling Rate')
     controls_plot1 =WidgetBox(controls_plot1_text, granularity_1,
                              sizing_mode="scale_width")  # data_type_selector)
-    plot1_description = Paragraph(text='INPUT DESCRIPTION HERE')
-
     controls_plot2_text = Paragraph(text='Pattern Type')
     controls_plot2_text2 = Paragraph(text='Days Included')
     controls_plot2 = WidgetBox(controls_plot2_text, analysis, controls_plot2_text2,weekdays_checkbox,
                               sizing_mode="scale_width")
-
-    plot2_description = Paragraph(text='INPUT DESCRIPTION HERE')
 
     row1 = row(country_selector,state_selector,home_id_selector, aggregate_selector, data_type_selector, sizing_mode="scale_height")
     row2= row(date_slider)
@@ -407,9 +391,7 @@ def first_tab_create(filterData):
     ## Create a row layout
     layout = column(row1,row2, row3, row4)
 
-
     ## Make a tab with the layout
     tab = Panel(child=layout, title='Input Data')
-
 
     return tab

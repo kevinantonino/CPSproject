@@ -14,6 +14,8 @@ from bokeh.models import Paragraph
 # Grid:
 # eGauge data present measuring power drawn from the electrical grid
 
+home_id_to_plot=5679 #starting home value to get load up
+
 def second_tab_create(filterData):
 
     #all_min_date = filterData.groupby('dataid').agg(min)["time"]
@@ -167,6 +169,9 @@ def second_tab_create(filterData):
 
 
     def update(attr, old, new):
+
+        global home_id_to_plot
+
         granularity_to_plot = granularity_1.labels[granularity_1.active]
         pi_u_to_plot = int(pi_u_input.value) / 100
         pi_nm_to_plot = int(pi_nm_input.value) / 100
@@ -175,14 +180,12 @@ def second_tab_create(filterData):
         ## Update the country dropdown
         country_selector.label = country_selector.value
 
-
         ## Update the state dropdown
 
         states_available = np.unique(filterData[filterData['country'] == country_selector.value]["state"])
         states_available = states_available.tolist()
         state_selector.menu = states_available
         state_selector.label = state_selector.value
-
 
         ## Update Homes Available
 
@@ -191,17 +194,17 @@ def second_tab_create(filterData):
         home_ids_available = list(map(str, home_ids))
         home_id_selector.menu = home_ids_available
         home_id_selector.label = home_id_selector.value
-        home_id_to_plot = int(home_id_selector.value)
-
+        new_home_id_to_plot = int(home_id_selector.value)
 
         ## DateRange updates
-        startDate = filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date.iloc[0]
-        endDate = filterData[filterData['dataid'] == home_id_to_plot]['time'].dt.date.iloc[-1]
+        startDate = filterData[filterData['dataid'] == new_home_id_to_plot]['time'].dt.date.iloc[0]
+        endDate = filterData[filterData['dataid'] == new_home_id_to_plot]['time'].dt.date.iloc[-1]
         date_range_slider.start = startDate
         date_range_slider.end = endDate
-        if home_id_to_plot not in home_ids:
+        if new_home_id_to_plot != home_id_to_plot:
             date_range_slider.value = (startDate,endDate)
 
+        home_id_to_plot = new_home_id_to_plot
         daterange_raw = list(date_range_slider.value_as_datetime)
         daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
 
@@ -266,6 +269,7 @@ def second_tab_create(filterData):
     home_id_selector = Dropdown(label="Home ID", button_type="warning", menu=home_ids_available, value="5679", max_height = 100)
     home_id_selector.on_change('value',update)
 
+
     ## Text input
     pi_u_input = TextInput(value="20", title="Utility Rate [¢/kWh]:",max_width = 175,max_height = 50)
     pi_u_input.on_change('value',update)
@@ -302,9 +306,7 @@ def second_tab_create(filterData):
     row3=row(plot4,plot5)
     row4=row(plot3)
 
-
     layout=column(row1,row2,row3,row4)
-
 
     # Make a tab with the layout
     tab = Panel(child=layout, title='Market Analysis')

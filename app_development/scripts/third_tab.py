@@ -87,7 +87,7 @@ def third_tab_create(filterData):
         return ColumnDataSource(test),mape
 
     def plot1_plot(src,mape):
-        plot1 = figure(title = 'PV Generation forcasting of home 5679',
+        plot1 = figure(title = 'PV Generation forcasting of NY',
                     x_axis_label = 'Time',
                     y_axis_label = 'Generation [kWh]',x_axis_type="datetime")
         a = plot1.line('time','data',source = src, color = 'blue')
@@ -136,7 +136,7 @@ def third_tab_create(filterData):
 
         #new_home_to_plot = int(home_id_selector.value) ###
 
-        plot1.title.text = f'{data_selector} forcasing of home {new_home_to_plot}'
+        plot1.title.text = f'{data_selector} forcasting of {new_home_to_plot} for date {date_slider.value}'
 
         if new_home_to_plot != home_to_plot:
             startDate = filterData[filterData['state'] == new_home_to_plot]['time'].iloc[0].date() ##change
@@ -194,7 +194,6 @@ def third_tab_create(filterData):
     
     row1 = row(plot1, column(data_type_selector, trainDays_input,community_selector,sizing_mode="scale_width"))
     row2 = row(date_slider)
-
 
     ## Layout
     layout= column(row1,row2)

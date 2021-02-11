@@ -28,8 +28,8 @@ home_to_plot = 27
 
 def first_tab_create(filterData):
     
-    all_min_date = filterData.groupby('dataid').agg(min)["time"]
-    all_max_date = filterData.groupby('dataid').agg(max)["time"]
+    # all_min_date = filterData.groupby('dataid').agg(min)["time"]
+    # all_max_date = filterData.groupby('dataid').agg(max)["time"]
 
 
     dummy_daterange = ['2019-05-01', '2019-08-20']
@@ -72,6 +72,7 @@ def first_tab_create(filterData):
 
         houseData['data'] = houseData[data]
         houseData = houseData.drop(columns = data)
+
 
         return ColumnDataSource(houseData)
 
@@ -150,6 +151,7 @@ def first_tab_create(filterData):
 
         data_selector = data_type_selector.labels[data_type_selector.active]
 
+
         ## Update the country dropdown
         country_selector.label = country_selector.value
 
@@ -166,28 +168,31 @@ def first_tab_create(filterData):
         home_ids_available = list(map(str, home_ids))
         home_id_selector.menu = home_ids_available
 
+        ## Update Aggregate selector titles
+
+        aggregate_selector.labels = [f'Aggregate By Country: {country_selector.value}',f'Aggregate By State: {state_selector.value}',f'Aggregate By Home: {home_id_selector.value}']
+
         ## plot updates:
-        plot1.title.text = f'{data_selector} Profile of Home {new_home_to_plot}'
 
         if data_selector == 'Net Load':
             data_type_to_plot = 'grid'
             plot2.yaxis.axis_label = 'Net Load [kWh]'
-            plot1.yaxis.axis_label  = 'Net Load [kWh]'
+            plot1.yaxis.axis_label = 'Net Load [kWh]'
 
         if data_selector == 'Load':
             data_type_to_plot = 'load'
             plot2.yaxis.axis_label = 'Load [kWh]'
-            plot1.yaxis.axis_label  = 'Load [kWh]'
+            plot1.yaxis.axis_label = 'Load [kWh]'
 
         if data_selector == "Electric Vehicle Consumption":
-            data_type_to_plot= 'car1'
+            data_type_to_plot = 'car1'
             plot2.yaxis.axis_label = 'Consumption [kWh]'
-            plot1.yaxis.axis_label  = 'Consumption [kWh]'
+            plot1.yaxis.axis_label = 'Consumption [kWh]'
 
         if data_selector == "PV Generation":
             data_type_to_plot = 'solar'
             plot2.yaxis.axis_label = 'Generation [kWh]'
-            plot1.yaxis.axis_label  = 'Generation [kWh]'
+            plot1.yaxis.axis_label = 'Generation [kWh]'
 
         avg_selector = analysis.labels[analysis.active]
 
@@ -197,52 +202,51 @@ def first_tab_create(filterData):
         if avg_selector == 'Daily Pattern':
             avg_to_plot = 'avghour'
 
-        include_days_to_plot = weekdays_checkbox.active # wish they had an inactive :/
+        include_days_to_plot = weekdays_checkbox.active  # wish they had an inactive :/
 
         for i in include_days_to_plot:
-            exclude_days_to_plot.remove(i) # lame way
-
-
-        ## plot 2 updates:
-        if avg_to_plot == 'avgday':
-            plot2.title.text = f'Average Weekly {data_selector} Profile of Home {new_home_to_plot}'
-            plot2.xaxis.axis_label = 'Day of the week'
-
-
-        if avg_to_plot == 'avghour':
-            plot2.title.text = f'Average Hourly {data_selector} Profile of Home {new_home_to_plot}'
-            plot2.xaxis.axis_label = 'Hours of Day'
-
+            exclude_days_to_plot.remove(i)  # lame way
 
         ## Create the dataset to plot (houseDate) based on aggregate or non aggregate selection
 
         if aggregate_selector.active == 0:
+
             houseData = filterData.groupby(filterData[filterData['country']==country_selector.value]['time']).mean() #should i use mean or sum here?
+            houseData = houseData[[data_type_to_plot]]
             houseData['time'] = houseData.index
+            startDate = houseData.index[0]
+            endDate = houseData.index[-1]
+            new_home_to_plot = country_selector.value
 
         elif aggregate_selector.active == 1:
+
             houseData = filterData.groupby(filterData[filterData['state']==state_selector.value]['time']).mean() # same question as above
+            houseData = houseData[[data_type_to_plot]]
             houseData['time'] = houseData.index
+            startDate = houseData.index[0]
+            endDate = houseData.index[-1]
+            new_home_to_plot = state_selector.value
+
         else:
+
             houseData = filterData[filterData['dataid'] == new_home_to_plot].sort_values('time', ascending=True)[[data_type_to_plot, 'time']]
             houseData.index = houseData['time']
+            startDate = houseData.index[0]
+            endDate = houseData.index[-1]
 
 
 
         # ## Update DateRange Slider
-        # if new_home_to_plot != home_to_plot:
+        if new_home_to_plot != home_to_plot:
 
+            startDate = str(startDate)[0:10]
+            endDate = str(endDate)[0:10]
 
-        startDate = houseData.index[0]
-        endDate = houseData.index[-1]
+            date_slider.start = date(int(startDate[0:4]), int(startDate[5:7]), int(startDate[8:10]))
+            date_slider.end = date(int(endDate[0:4]), int(endDate[5:7]), int(endDate[8:10]))
+            date_slider.value = (date(int(startDate[0:4]), int(startDate[5:7]), int(startDate[8:10])),
+                                 date(int(endDate[0:4]), int(endDate[5:7]), int(endDate[8:10])))
 
-        startDate = str(startDate)[0:10]
-        endDate = str(endDate)[0:10]
-
-        date_slider.start = date(int(startDate[0:4]),int(startDate[5:7]),int(startDate[8:10]))
-        date_slider.end = date(int(endDate[0:4]),int(endDate[5:7]),int(endDate[8:10]))
-        date_slider.value =(date(int(startDate[0:4]),int(startDate[5:7]),int(startDate[8:10])),
-                            date(int(endDate[0:4]),int(endDate[5:7]),int(endDate[8:10])))
 
 
         home_to_plot = new_home_to_plot
@@ -252,6 +256,18 @@ def first_tab_create(filterData):
         ##Edit bounds of data we are plotting
 
         houseData = houseData.loc[daterange_to_plot[0]:daterange_to_plot[1], :]  # cut to the days requested
+
+        ## change plot titles to fit current data
+        plot1.title.text = f'{data_selector} Profile of {new_home_to_plot}'
+
+        ## plot 2 updates:
+        if avg_to_plot == 'avgday':
+            plot2.title.text = f'Average Weekly {data_selector} Profile of {new_home_to_plot}'
+            plot2.xaxis.axis_label = 'Day of the week'
+
+        if avg_to_plot == 'avghour':
+            plot2.title.text = f'Average Hourly {data_selector} Profile of {new_home_to_plot}'
+            plot2.xaxis.axis_label = 'Hours of Day'
 
         ## SRC Updates
         new_src1 = plot1_data(houseData, daterange=daterange_to_plot,
@@ -312,7 +328,7 @@ def first_tab_create(filterData):
     state_selector.on_change('value', update)
 
     ## Home Selector
-    home_ids_available = np.unique(filterData['dataid'])
+    home_ids_available = np.unique(filterData[filterData['state'] == 'NY']['dataid'])
 
     home_ids_available = list(map(str, home_ids_available))
     home_id_selector = Dropdown(label="Home ID", button_type="warning",
@@ -321,12 +337,13 @@ def first_tab_create(filterData):
 
 
 
-    ##Aggregate Country Button
+    ##Aggregate Country/State/ home Button
 
     aggregate_selector = RadioButtonGroup(
-        labels=["Aggregate By Country", "Aggregate by State", "Show Individual Home by ID"], active=2)
+        labels=[f'Aggregate By Country: {country_selector.value}',
+                                 f'Aggregate By State: {state_selector.value}',
+                                 f'Aggregate By Home: {home_id_selector.value}'], active=2)
     aggregate_selector.on_change('active',update)
-
 
 
 

@@ -28,8 +28,8 @@ home_to_plot = 27
 
 def first_tab_create(filterData):
     
-    all_min_date = filterData.groupby('dataid').agg(min)["time"]
-    all_max_date = filterData.groupby('dataid').agg(max)["time"]
+    # all_min_date = filterData.groupby('dataid').agg(min)["time"]
+    # all_max_date = filterData.groupby('dataid').agg(max)["time"]
 
 
     dummy_daterange = ['2019-05-01', '2019-08-20']
@@ -38,7 +38,7 @@ def first_tab_create(filterData):
     dummy_granularity = '15 Minutes'
     dummy_analysis = 'avgday'
 
-    def plot1_data(house, daterange=dummy_daterange, data=dummy_data_type, xaxis=dummy_granularity):
+    def plot1_data(houseData, daterange=dummy_daterange, data=dummy_data_type, xaxis=dummy_granularity):
 
         # house is an integer number ex. 27
         # daterange is an array with 2 strings, start date and end date. ex. ['2019-05-01','2019-08-09']
@@ -46,10 +46,9 @@ def first_tab_create(filterData):
         # data is a string ex. 'car1'
         # xaxis is also a string ex. 'hour'
 
-        houseData = filterData[filterData['dataid'] == house].sort_values('time', ascending=True)[[data, 'time']]
         # that cuts the house, sorts by ascending time, and pulls out only the type of data that was requested
-        houseData.index = houseData['time']  # reindex by the datetime
-        houseData = houseData.loc[daterange[0]:daterange[1], :]  # cut to the days requested
+        # houseData.index = houseData['time']  # reindex by the datetime
+        # houseData = houseData.loc[daterange[0]:daterange[1], :]  # cut to the days requested
 
         if xaxis == '15 Minutes':
             houseData = houseData.drop(columns="time")
@@ -74,15 +73,16 @@ def first_tab_create(filterData):
         houseData['data'] = houseData[data]
         houseData = houseData.drop(columns = data)
 
+
         return ColumnDataSource(houseData)
 
 
-    def plot2_data(house,daterange=dummy_daterange,weekdays = [],data=dummy_data_type,xaxis=dummy_analysis):
+    def plot2_data(houseData,daterange=dummy_daterange,weekdays = [],data=dummy_data_type,xaxis=dummy_analysis):
              #communityData = filterData[filterData['state'] == filterData[filterData['dataid'] == house]['state'].iloc[0]]
-             houseData = filterData[filterData['dataid'] == house].sort_values('time', ascending = True)[[data,'time']]
+             # houseData = filterData[filterData['dataid'] == house].sort_values('time', ascending = True)[[data,'time']]
             #  that cuts the house, sorts by ascending time, and pulls out only the type of data that was requested
-             houseData.index = houseData['time'] # reindex by the datetime
-             houseData = houseData.loc[daterange[0]:daterange[1],:] # cut to the days requested
+            #  houseData.index = houseData['time'] # reindex by the datetime
+            #  houseData = houseData.loc[daterange[0]:daterange[1],:] # cut to the days requested
 
              for i in weekdays:
                  houseData = houseData[houseData['time'].dt.dayofweek != i] # cut out days we dont want
@@ -137,93 +137,145 @@ def first_tab_create(filterData):
 
     def update(attr, old, new):  # still a little unsure how the update function gets values passed in implicitly
 
+
         global home_to_plot
-        
-        daterange_to_plot = ['2019-05-01', '2019-08-20']
+        # global state_selector
+
+        # daterange_to_plot = ['2019-05-01', '2019-08-20']
         data_type_to_plot = 'grid'
         exclude_days_to_plot = [0,1,2,3,4,5,6]
         avg_to_plot = 'avgday'
-        
+
         granularity_to_plot = granularity_1.labels[granularity_1.active]
         new_home_to_plot = int(home_id_selector.value)
 
-        data_selector = data_type_selector.labels[data_type_selector.active] 
+        data_selector = data_type_selector.labels[data_type_selector.active]
 
-        ## plot updates: 
-        plot1.title.text = f'{data_selector} Profile of Home {new_home_to_plot}'
-        
+
+        ## Update the country dropdown
+        country_selector.label = country_selector.value
+
+        ## Update the state dropdown
+
+        states_available = np.unique(filterData[filterData['country'] == country_selector.value]["state"])
+        states_available = states_available.tolist()
+        state_selector.menu = states_available
+        state_selector.label = state_selector.value
+
+        ## Update Homes Available
+
+        home_ids = np.unique(filterData[filterData['state'] == state_selector.value]['dataid'])
+        home_ids_available = list(map(str, home_ids))
+        home_id_selector.menu = home_ids_available
+
+        ## Update Aggregate selector titles
+
+        aggregate_selector.labels = [f'Aggregate By Country: {country_selector.value}',f'Aggregate By State: {state_selector.value}',f'Aggregate By Home: {home_id_selector.value}']
+
+        ## plot updates:
+
         if data_selector == 'Net Load':
             data_type_to_plot = 'grid'
             plot2.yaxis.axis_label = 'Net Load [kWh]'
-            plot1.yaxis.axis_label  = 'Net Load [kWh]'
-        
+            plot1.yaxis.axis_label = 'Net Load [kWh]'
+
         if data_selector == 'Load':
             data_type_to_plot = 'load'
             plot2.yaxis.axis_label = 'Load [kWh]'
-            plot1.yaxis.axis_label  = 'Load [kWh]'
-
+            plot1.yaxis.axis_label = 'Load [kWh]'
 
         if data_selector == "Electric Vehicle Consumption":
-            data_type_to_plot= 'car1'
+            data_type_to_plot = 'car1'
             plot2.yaxis.axis_label = 'Consumption [kWh]'
-            plot1.yaxis.axis_label  = 'Consumption [kWh]'
+            plot1.yaxis.axis_label = 'Consumption [kWh]'
 
         if data_selector == "PV Generation":
             data_type_to_plot = 'solar'
             plot2.yaxis.axis_label = 'Generation [kWh]'
-            plot1.yaxis.axis_label  = 'Generation [kWh]'
+            plot1.yaxis.axis_label = 'Generation [kWh]'
 
         avg_selector = analysis.labels[analysis.active]
 
         if avg_selector == 'Weekly Pattern':
             avg_to_plot = 'avgday'
-        
+
         if avg_selector == 'Daily Pattern':
             avg_to_plot = 'avghour'
 
-        include_days_to_plot = weekdays_checkbox.active # wish they had an inactive :/
-        
+        include_days_to_plot = weekdays_checkbox.active  # wish they had an inactive :/
+
         for i in include_days_to_plot:
-            exclude_days_to_plot.remove(i) # lame way 
-        
+            exclude_days_to_plot.remove(i)  # lame way
 
-        ## plot 2 updates: 
-        if avg_to_plot == 'avgday':
-            plot2.title.text = f'Average Weekly {data_selector} Profile of Home {new_home_to_plot}'
-            plot2.xaxis.axis_label = 'Day of the week'
-            
+        ## Create the dataset to plot (houseDate) based on aggregate or non aggregate selection
 
-        if avg_to_plot == 'avghour':
-            plot2.title.text = f'Average Hourly {data_selector} Profile of Home {new_home_to_plot}'
-            plot2.xaxis.axis_label = 'Hours of Day'
-            
+        if aggregate_selector.active == 0:
 
-        ## Update DateRange Slider
+            houseData = filterData.groupby(filterData[filterData['country']==country_selector.value]['time']).mean() #should i use mean or sum here?
+            houseData = houseData[[data_type_to_plot]]
+            houseData['time'] = houseData.index
+            startDate = houseData.index[0]
+            endDate = houseData.index[-1]
+            new_home_to_plot = country_selector.value
+
+        elif aggregate_selector.active == 1:
+
+            houseData = filterData.groupby(filterData[filterData['state']==state_selector.value]['time']).mean() # same question as above
+            houseData = houseData[[data_type_to_plot]]
+            houseData['time'] = houseData.index
+            startDate = houseData.index[0]
+            endDate = houseData.index[-1]
+            new_home_to_plot = state_selector.value
+
+        else:
+
+            houseData = filterData[filterData['dataid'] == new_home_to_plot].sort_values('time', ascending=True)[[data_type_to_plot, 'time']]
+            houseData.index = houseData['time']
+            startDate = houseData.index[0]
+            endDate = houseData.index[-1]
+
+
+
+        # ## Update DateRange Slider
         if new_home_to_plot != home_to_plot:
-        
-            startDate = filterData[filterData['dataid'] == new_home_to_plot]['time'].iloc[0]
-            endDate = filterData[filterData['dataid'] == new_home_to_plot]['time'].iloc[-1]
 
             startDate = str(startDate)[0:10]
             endDate = str(endDate)[0:10]
 
-            date_slider.start = date(int(startDate[0:4]),int(startDate[5:7]),int(startDate[8:10]))
-            date_slider.end = date(int(endDate[0:4]),int(endDate[5:7]),int(endDate[8:10]))
-            date_slider.value =(date(int(startDate[0:4]),int(startDate[5:7]),int(startDate[8:10])), 
-                    date(int(endDate[0:4]),int(endDate[5:7]),int(endDate[8:10])))     
+            date_slider.start = date(int(startDate[0:4]), int(startDate[5:7]), int(startDate[8:10]))
+            date_slider.end = date(int(endDate[0:4]), int(endDate[5:7]), int(endDate[8:10]))
+            date_slider.value = (date(int(startDate[0:4]), int(startDate[5:7]), int(startDate[8:10])),
+                                 date(int(endDate[0:4]), int(endDate[5:7]), int(endDate[8:10])))
+
+
 
         home_to_plot = new_home_to_plot
         daterange_raw = list(date_slider.value_as_datetime)
         daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
 
+        ##Edit bounds of data we are plotting
+
+        houseData = houseData.loc[daterange_to_plot[0]:daterange_to_plot[1], :]  # cut to the days requested
+
+        ## change plot titles to fit current data
+        plot1.title.text = f'{data_selector} Profile of {new_home_to_plot}'
+
+        ## plot 2 updates:
+        if avg_to_plot == 'avgday':
+            plot2.title.text = f'Average Weekly {data_selector} Profile of {new_home_to_plot}'
+            plot2.xaxis.axis_label = 'Day of the week'
+
+        if avg_to_plot == 'avghour':
+            plot2.title.text = f'Average Hourly {data_selector} Profile of {new_home_to_plot}'
+            plot2.xaxis.axis_label = 'Hours of Day'
 
         ## SRC Updates
-        new_src1 = plot1_data(new_home_to_plot, daterange=daterange_to_plot,
+        new_src1 = plot1_data(houseData, daterange=daterange_to_plot,
                 data=data_type_to_plot, xaxis=granularity_to_plot)
 
-        new_src2 = plot2_data(new_home_to_plot, daterange=daterange_to_plot, 
+        new_src2 = plot2_data(houseData, daterange=daterange_to_plot,
                 weekdays=exclude_days_to_plot, data=data_type_to_plot,xaxis=avg_to_plot)
-        
+
         src1.data.update(new_src1.data)
         src2.data.update(new_src2.data)
 
@@ -258,14 +310,41 @@ def first_tab_create(filterData):
 
     weekdays_checkbox.on_change('active',update) # Run the whole update
 
-    
+
+    ## Country Selector
+    countries_available = np.unique(filterData['country'])
+    countries_available = countries_available.tolist()
+
+    country_selector = Dropdown(label="Country", button_type="warning",
+                                menu=countries_available, value="USA", max_height=150, width=300)
+    country_selector.on_change('value', update)
+
+    ## State Selector
+    states_available = np.unique(filterData[filterData['country'] == "USA"]["state"])
+    states_available = states_available.tolist()
+
+    state_selector = Dropdown(label="State", button_type="warning",
+                                menu=states_available, value="NY", max_height=150, width=300)
+    state_selector.on_change('value', update)
+
     ## Home Selector
-    home_ids_available = np.unique(filterData['dataid'])
+    home_ids_available = np.unique(filterData[filterData['state'] == 'NY']['dataid'])
 
     home_ids_available = list(map(str, home_ids_available))
-    home_id_selector = Dropdown(label="Home ID", button_type="warning", 
+    home_id_selector = Dropdown(label="Home ID", button_type="warning",
             menu=home_ids_available, value="27",max_height = 150, width=300)
     home_id_selector.on_change('value',update)
+
+
+
+    ##Aggregate Country/State/ home Button
+
+    aggregate_selector = RadioButtonGroup(
+        labels=[f'Aggregate By Country: {country_selector.value}',
+                                 f'Aggregate By State: {state_selector.value}',
+                                 f'Aggregate By Home: {home_id_selector.value}'], active=2)
+    aggregate_selector.on_change('active',update)
+
 
 
     ## Date Range Selector
@@ -284,16 +363,26 @@ def first_tab_create(filterData):
 
     xaxis = '15 Minutes'
 
-    src1 = plot1_data(27, ['2019-05-01', '2019-08-20'], 'grid',
+    initial_home_id=27
+    initial_daterange_to_plot=['2019-05-01', '2019-08-20']
+    initial_data_type_to_plot = "grid"
+    initial_day_type = "avgday"
+
+
+    initial_data = filterData[filterData['dataid'] == initial_home_id].sort_values('time', ascending=True)[
+        [initial_data_type_to_plot, 'time']]
+    initial_data.index = initial_data['time']
+    initial_data = initial_data.loc[initial_daterange_to_plot[0]:initial_daterange_to_plot[1], :]  # cut to the days requested
+
+    src1 = plot1_data(initial_data, initial_daterange_to_plot, initial_data_type_to_plot,
                       xaxis)  # start with a data range we know is correct
     
     plot1 = plot1_plot(src1)
 
-    src2 = plot2_data(27,['2019-05-01', '2019-08-20'],[],'grid','avgday')
+    src2 = plot2_data(initial_data, initial_daterange_to_plot,[],initial_data_type_to_plot,initial_day_type)
 
     plot2 = plot2_plot(src2)
 
-    #
 
     ## Put controls in a single element (add more later to format)
 
@@ -310,7 +399,7 @@ def first_tab_create(filterData):
 
     plot2_description = Paragraph(text='INPUT DESCRIPTION HERE')
 
-    row1 = row(home_id_selector, data_type_selector, sizing_mode="scale_height")
+    row1 = row(country_selector,state_selector,home_id_selector, aggregate_selector, data_type_selector, sizing_mode="scale_height")
     row2= row(date_slider)
     row3= row(plot1,controls_plot1)
     row4 = row(plot2,controls_plot2)

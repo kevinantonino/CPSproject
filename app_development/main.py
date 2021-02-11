@@ -95,8 +95,6 @@ newEnel["grid"] = newEnel["grid"]/1000
 newEnel["country"] = np.full((len(newEnel),1), "Italy") #add country column
 
 
-
-
 ###not sure about time of enel data, make sure it is in local time
 filterData = filterData.append(newEnel)
 filterData['time'] = pd.to_datetime(filterData['time'], utc = True)

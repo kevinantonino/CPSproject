@@ -37,33 +37,33 @@ b['time'].loc[:] = a.loc[:]
 filterData = filterData[filterData['state'] == 'NY']
 filterData = filterData.append(b)
 
-
-## NY Aggregate house
-agg = filterData.groupby(filterData[filterData['state']=='NY']['time']).sum()
-agg['dataid'] = 1
-agg['time'] = agg.index
-agg['time'] = pd.to_datetime(agg['time'])
-agg['state'] = 'NY'
-agg = agg[['car1','grid','solar','time','dataid','state','load']]
-filterData = filterData.append(agg)
-
-## TX Aggregate house
-agg = filterData.groupby(filterData[filterData['state']=='TX']['time']).sum()
-agg['dataid'] = 2
-agg['time'] = agg.index
-agg['time'] = pd.to_datetime(agg['time'])
-agg['state'] = 'TX'
-agg = agg[['car1','grid','solar','time','dataid','state','load']]
-filterData = filterData.append(agg)
-
-## TX Aggregate house
-agg = filterData.groupby(filterData['time']).sum()
-agg['dataid'] = 3
-agg['time'] = agg.index
-agg['time'] = pd.to_datetime(agg['time'])
-agg['state'] = 'TXNY'
-agg = agg[['car1','grid','solar','time','dataid','state','load']]
-filterData = filterData.append(agg)
+#
+# ## NY Aggregate house
+# agg = filterData.groupby(filterData[filterData['state']=='NY']['time']).sum()
+# agg['dataid'] = 1
+# agg['time'] = agg.index
+# agg['time'] = pd.to_datetime(agg['time'])
+# agg['state'] = 'NY'
+# agg = agg[['car1','grid','solar','time','dataid','state','load']]
+# filterData = filterData.append(agg)
+#
+# ## TX Aggregate house
+# agg = filterData.groupby(filterData[filterData['state']=='TX']['time']).sum()
+# agg['dataid'] = 2
+# agg['time'] = agg.index
+# agg['time'] = pd.to_datetime(agg['time'])
+# agg['state'] = 'TX'
+# agg = agg[['car1','grid','solar','time','dataid','state','load']]
+# filterData = filterData.append(agg)
+#
+# ## TX Aggregate house
+# agg = filterData.groupby(filterData['time']).sum()
+# agg['dataid'] = 3
+# agg['time'] = agg.index
+# agg['time'] = pd.to_datetime(agg['time'])
+# agg['state'] = 'TXNY'
+# agg = agg[['car1','grid','solar','time','dataid','state','load']]
+# filterData = filterData.append(agg)
 
 #took out original enel data because solar readings do not make sense
 # ## Enel

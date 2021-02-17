@@ -213,10 +213,10 @@ def first_tab_create(filterData):
             houseData = filterData.loc[filterData['country'] == country_selector.value, :]
             houseData = houseData.groupby('time').mean()  # same question as above
             # houseData = filterData.groupby(filterData[filterData['country']==country_selector.value]['time']).mean() #should i use mean or sum here?
-            print(country_selector.value)
-            print(houseData.head(15))
+            # print(country_selector.value)
+            # print(houseData.head(15))
             houseData = houseData[[data_type_to_plot]]
-            print(houseData.head(15))
+            # print(houseData.head(15))
             houseData['time'] = houseData.index
             startDate = houseData.index[0]
             endDate = houseData.index[-1]
@@ -226,10 +226,10 @@ def first_tab_create(filterData):
 
             houseData = filterData.loc[filterData['state']==state_selector.value,:]
             houseData = houseData.groupby('time').mean() # same question as above
-            print(state_selector.value)
-            print(houseData.head(15))
+            # print(state_selector.value)
+            # print(houseData.head(15))
             houseData = houseData[[data_type_to_plot]]
-            print(houseData.head(15))
+            # print(houseData.head(15))
             houseData['time'] = houseData.index
             startDate = houseData.index[0]
             endDate = houseData.index[-1]

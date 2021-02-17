@@ -69,7 +69,7 @@ newEnel["country"] = np.full((len(newEnel),1), "Italy") #add country column
 ###not sure about time of enel data, make sure it is in local time
 filterData = filterData.append(newEnel)
 filterData['time'] = pd.to_datetime(filterData['time'], utc = True)
-print(filterData.head(10))
+# print(filterData.head(10))
 
 # Create each of the tabs
 tab1 = first_tab_create(filterData)

@@ -19,7 +19,7 @@ from scripts.third_tab import third_tab_create
 allData = pd.read_csv(join(dirname(__file__), 'data', '15min_EV_PV_homes_only.csv'))
 filterData = allData[["car1","grid","solar","local_15min","dataid","state"]] # cutting down nonessential columns for the sake of runtime
 filterData['load'] = filterData['grid'] + filterData['solar']
-filterData = filterData.rename(columns={"local_15min":"time"})
+filterData = filterData.rename(columns={"local_15min":"time","solar":"PV_+_Battery(Discharge)","load":"Load_+_Battery(Charging)"})
 filterData["country"]= np.full((len(filterData),1), "USA")
 
 
@@ -48,7 +48,7 @@ filterData = filterData.append(b)
 
 
 # new Enel with 15 min resample (79 homes, id 500 - 609)
-newEnel = pd.read_csv(join(dirname(__file__), 'data', 'new_Enel_15min_resamp.csv'))
+newEnel = pd.read_csv(join(dirname(__file__), 'data', 'combined_Enel_with_Battery_15min_resamp.csv'))
 #newEnel.index() = newEnel['time']
 #newEnel = newEnel.drop(columns = 'time')
 
@@ -59,14 +59,17 @@ newEnel["dataid"]= newEnel["dataid"].astype(int)
 
 #columns of solar, car1, load, grid are in W. need to convert to kW
 newEnel["car1"] = newEnel["car1"]/1000
-newEnel["solar"] = newEnel["solar"]/1000
-newEnel["load"] = newEnel["load"]/1000
+newEnel["PV_+_Battery(Discharge)"] = newEnel["PV_+_Battery(Discharge)"]/1000
 newEnel["grid"] = newEnel["grid"]/1000
+newEnel["Load_+_Battery(Charging)"] = newEnel["Load_+_Battery(Charging)"]/1000
+# newEnel["Load_+_Battery(Charging)"] = newEnel["grid"]+newEnel["PV_+_Battery(Discharge)"]
+
 newEnel["country"] = np.full((len(newEnel),1), "Italy") #add country column
 
 ###not sure about time of enel data, make sure it is in local time
 filterData = filterData.append(newEnel)
 filterData['time'] = pd.to_datetime(filterData['time'], utc = True)
+print(filterData.head(10))
 
 # Create each of the tabs
 tab1 = first_tab_create(filterData)

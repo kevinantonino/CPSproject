@@ -169,7 +169,7 @@ def first_tab_create(filterData):
 
         ## Update Aggregate selector titles
 
-        aggregate_selector.labels = [f'Aggregate By Country: {country_selector.value}',f'Aggregate By State: {state_selector.value}',f'Aggregate By Home: {home_id_selector.value}']
+        aggregate_selector.labels = [f'Aggregate By Country: {country_selector.value}',f'Aggregate By Region: {state_selector.value}',f'Aggregate By Home: {home_id_selector.value}']
 
         ## plot updates:
 
@@ -178,8 +178,8 @@ def first_tab_create(filterData):
             plot2.yaxis.axis_label = 'Net Load [kWh]'
             plot1.yaxis.axis_label = 'Net Load [kWh]'
 
-        if data_selector == 'Load':
-            data_type_to_plot = 'load'
+        if data_selector == 'Load + Battery(Charging)':
+            data_type_to_plot = 'Load_+_Battery(Charging)'
             plot2.yaxis.axis_label = 'Load [kWh]'
             plot1.yaxis.axis_label = 'Load [kWh]'
 
@@ -188,8 +188,8 @@ def first_tab_create(filterData):
             plot2.yaxis.axis_label = 'Consumption [kWh]'
             plot1.yaxis.axis_label = 'Consumption [kWh]'
 
-        if data_selector == "PV Generation":
-            data_type_to_plot = 'solar'
+        if data_selector == "PV Generation + Battery(Discharge)":
+            data_type_to_plot = 'PV_+_Battery(Discharge)'
             plot2.yaxis.axis_label = 'Generation [kWh]'
             plot1.yaxis.axis_label = 'Generation [kWh]'
 
@@ -210,8 +210,13 @@ def first_tab_create(filterData):
 
         if aggregate_selector.active == 0:
 
-            houseData = filterData.groupby(filterData[filterData['country']==country_selector.value]['time']).mean() #should i use mean or sum here?
+            houseData = filterData.loc[filterData['country'] == country_selector.value, :]
+            houseData = houseData.groupby('time').mean()  # same question as above
+            # houseData = filterData.groupby(filterData[filterData['country']==country_selector.value]['time']).mean() #should i use mean or sum here?
+            print(country_selector.value)
+            print(houseData.head(15))
             houseData = houseData[[data_type_to_plot]]
+            print(houseData.head(15))
             houseData['time'] = houseData.index
             startDate = houseData.index[0]
             endDate = houseData.index[-1]
@@ -219,8 +224,12 @@ def first_tab_create(filterData):
 
         elif aggregate_selector.active == 1:
 
-            houseData = filterData.groupby(filterData[filterData['state']==state_selector.value]['time']).mean() # same question as above
+            houseData = filterData.loc[filterData['state']==state_selector.value,:]
+            houseData = houseData.groupby('time').mean() # same question as above
+            print(state_selector.value)
+            print(houseData.head(15))
             houseData = houseData[[data_type_to_plot]]
+            print(houseData.head(15))
             houseData['time'] = houseData.index
             startDate = houseData.index[0]
             endDate = houseData.index[-1]
@@ -309,15 +318,15 @@ def first_tab_create(filterData):
     countries_available = countries_available.tolist()
 
     country_selector = Dropdown(label="Country", button_type="warning",
-                                menu=countries_available, value="USA", max_height=150, width=300)
+                                menu=countries_available, value="USA", max_height=150, width=400)
     country_selector.on_change('value', update)
 
     ## State Selector
     states_available = np.unique(filterData[filterData['country'] == "USA"]["state"])
     states_available = states_available.tolist()
 
-    state_selector = Dropdown(label="State", button_type="warning",
-                                menu=states_available, value="NY", max_height=150, width=300)
+    state_selector = Dropdown(label="Region", button_type="warning",
+                                menu=states_available, value="NY", max_height=150, width=500)
     state_selector.on_change('value', update)
 
     ## Home Selector
@@ -325,7 +334,7 @@ def first_tab_create(filterData):
 
     home_ids_available = list(map(str, home_ids_available))
     home_id_selector = Dropdown(label="Home ID", button_type="warning",
-            menu=home_ids_available, value="27",max_height = 150, width=300)
+            menu=home_ids_available, value="27",max_height = 150, width=600)
     home_id_selector.on_change('value',update)
 
 
@@ -334,7 +343,7 @@ def first_tab_create(filterData):
 
     aggregate_selector = RadioButtonGroup(
         labels=[f'Aggregate By Country: {country_selector.value}',
-                                 f'Aggregate By State: {state_selector.value}',
+                                 f'Aggregate By Region: {state_selector.value}',
                                  f'Aggregate By Home: {home_id_selector.value}'], active=2)
     aggregate_selector.on_change('active',update)
 
@@ -345,9 +354,11 @@ def first_tab_create(filterData):
     date_slider.on_change("value_throttled", update)
 
     ## Data Options
-    data_type_selector = RadioGroup(labels=["Net Load","Load","PV Generation","Electric Vehicle Consumption"],
+    data_type_selector = RadioButtonGroup(labels=["Net Load","Load + Battery(Charging)","PV Generation + Battery(Discharge)","Electric Vehicle Consumption"],
             active=0,max_height = 150)
     data_type_selector.on_change('active', update)
+
+
     
     ## Initialize opening plot and data
 
@@ -383,13 +394,14 @@ def first_tab_create(filterData):
     controls_plot2 = WidgetBox(controls_plot2_text, analysis, controls_plot2_text2,weekdays_checkbox,
                               sizing_mode="scale_width")
 
-    row1 = row(country_selector,state_selector,home_id_selector, aggregate_selector, data_type_selector, sizing_mode="scale_height")
-    row2= row(date_slider)
-    row3= row(plot1,controls_plot1)
-    row4 = row(plot2,controls_plot2)
+    row1 = row(country_selector,state_selector,home_id_selector, aggregate_selector, sizing_mode="scale_height")
+    row2 = row(data_type_selector)
+    row3 = row(date_slider)
+    row4 = row(plot1,controls_plot1)
+    row5 = row(plot2,controls_plot2)
 
     ## Create a row layout
-    layout = column(row1,row2, row3, row4)
+    layout = column(row1,row2, row3, row4, row5)
 
     ## Make a tab with the layout
     tab = Panel(child=layout, title='Input Data')

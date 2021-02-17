@@ -87,7 +87,7 @@ def third_tab_create(filterData):
         return ColumnDataSource(test),mape
 
     def plot1_plot(src,mape):
-        plot1 = figure(title = 'PV Generation forcasting of NY',
+        plot1 = figure(title = 'PV Generation + Battery(Discharge) forecasting of NY',
                     x_axis_label = 'Time',
                     y_axis_label = 'Generation [kWh]',x_axis_type="datetime")
         a = plot1.line('time','data',source = src, color = 'blue')
@@ -117,16 +117,16 @@ def third_tab_create(filterData):
             data_to_plot = 'grid'
             plot1.yaxis.axis_label  = 'Net Load [kWh]'
         
-        if data_selector == 'Load':
-            data_to_plot = 'load'
+        if data_selector == 'Load + Battery(Charging)':
+            data_to_plot = 'Load_+_Battery(Charging)'
             plot1.yaxis.axis_label  = 'Load [kWh]'
 
         if data_selector == "Electric Vehicle Consumption":
             data_to_plot= 'car1'
             plot1.yaxis.axis_label  = 'Consumption [kWh]'
 
-        if data_selector == "PV Generation":
-            data_to_plot = 'solar'
+        if data_selector == "PV Generation + Battery(Discharge)":
+            data_to_plot = 'PV_+_Battery(Discharge)'
             plot1.yaxis.axis_label  = 'Generation [kWh]'
 
         trainDays_to_plot = int(trainDays_input.value)
@@ -136,7 +136,7 @@ def third_tab_create(filterData):
 
         #new_home_to_plot = int(home_id_selector.value) ###
 
-        plot1.title.text = f'{data_selector} forcasting of {new_home_to_plot} for date {date_slider.value}'
+        plot1.title.text = f'{data_selector} forecasting of {new_home_to_plot} for date {date_slider.value}'
 
         if new_home_to_plot != home_to_plot:
             startDate = filterData[filterData['state'] == new_home_to_plot]['time'].iloc[0].date() ##change
@@ -161,7 +161,7 @@ def third_tab_create(filterData):
         home_to_plot = new_home_to_plot
 
     ## Initialize src and plot
-    src1,mape1 = arima(date = '2019-07-20', state = 'NY', data = 'solar', trainDays = 2)
+    src1,mape1 = arima(date = '2019-07-20', state = 'NY', data = 'PV_+_Battery(Discharge)', trainDays = 2)
     plot1 = plot1_plot(src1,mape1)
 
     ## Date Slider
@@ -175,7 +175,7 @@ def third_tab_create(filterData):
     trainDays_input.on_change('value',update)
 
     ## Data Options
-    data_type_selector = RadioGroup(labels=["PV Generation","Load","Net Load","Electric Vehicle Consumption"],
+    data_type_selector = RadioGroup(labels=["PV Generation + Battery(Discharge)","Load + Battery(Charging)","Net Load","Electric Vehicle Consumption"],
             active=0)
     data_type_selector.on_change('active', update)
 

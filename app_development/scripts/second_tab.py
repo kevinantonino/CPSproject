@@ -67,16 +67,16 @@ def second_tab_create(filterData):
 
     def barPlot_data(daterange = dummy_daterange, house = dummy_house, pi_u = dummy_pi_u, pi_nm = dummy_pi_nm, mode = dummy_mode,community = dummy_community):
         sortedData = filterData[filterData['state'] == community]    
-        sortedData = sortedData[['time','grid','solar','dataid']].sort_values('time', ascending = True)
+        sortedData = sortedData[['time','grid','PV_+_Battery(Discharge)','dataid']].sort_values('time', ascending = True)
         sortedData.index = sortedData['time']
         sortedData = sortedData.loc[daterange[0]:daterange[1],:]
         sortedData['grid'] = sortedData['grid'] * 60 * 15 / 3600 # kWh
-        sortedData['solar'] = sortedData['solar'] * 60 * 15 / 3600 # kWh
+        sortedData['PV_+_Battery(Discharge)'] = sortedData['PV_+_Battery(Discharge)'] * 60 * 15 / 3600 # kWh
 
         houseData = sortedData[sortedData['dataid'] == house]
 
-        L = houseData['grid'] + houseData['solar'] # (L-S) + S = L
-        S =  houseData['solar'] # S
+        L = houseData['grid'] + houseData['PV_+_Battery(Discharge)'] # (L-S) + S = L
+        S =  houseData['PV_+_Battery(Discharge)'] # S
         Sbar = ( S < L ) * S + ( S > L ) * L # Sbar
         solarAtDiscount = S - Sbar 
 
@@ -84,10 +84,10 @@ def second_tab_create(filterData):
         selfSolarSum = Sbar.sum() # green plot no share
         discountSum = solarAtDiscount.sum() # red plot no share
         
-        houseAgg = sortedData.groupby(sortedData['time'])['grid','solar'].sum()
+        houseAgg = sortedData.groupby(sortedData['time'])['grid','PV_+_Battery(Discharge)'].sum()
 
-        loadAgg = houseAgg['grid'] + houseAgg['solar'] 
-        solarAgg = houseAgg['solar']
+        loadAgg = houseAgg['grid'] + houseAgg['PV_+_Battery(Discharge)']
+        solarAgg = houseAgg['PV_+_Battery(Discharge)']
 
         sumL = loadAgg.cumsum() # Over all of the houses 
         sumS = solarAgg.cumsum()
@@ -230,7 +230,7 @@ def second_tab_create(filterData):
         src6.data.update(new_src6.data)
     
     ## Granularity Button
-    granularity_1 = RadioGroup(
+    granularity_1 = RadioButtonGroup(
         labels=["15 Minutes", "Hour", "Day", "Week", "Month"], active=0,
             max_width = 100)
     granularity_1.on_change('active',
@@ -257,7 +257,7 @@ def second_tab_create(filterData):
     states_available = np.unique(filterData[filterData['country'] == "USA"]["state"])
     states_available = states_available.tolist()
 
-    state_selector = Dropdown(label="State", button_type="warning",
+    state_selector = Dropdown(label="Region", button_type="warning",
                                 menu=states_available, value="NY", max_height=150, width=300)
     state_selector.on_change('value', update)
 
@@ -266,7 +266,7 @@ def second_tab_create(filterData):
     home_ids_available = np.unique(filterData[filterData['state'] == 'NY']['dataid'])
 
     home_ids_available = list(map(str, home_ids_available))
-    home_id_selector = Dropdown(label="Home ID", button_type="warning", menu=home_ids_available, value="5679", max_height = 100)
+    home_id_selector = Dropdown(label="Home ID", button_type="warning", menu=home_ids_available, value="5679",max_height=150, width=300)
     home_id_selector.on_change('value',update)
 
 
@@ -299,14 +299,15 @@ def second_tab_create(filterData):
     table_title = Paragraph(text='Value of Solar Energy [¢/kWh]', width=350, max_height=50)
 
     # Create Layout
-    controls_row3= column (table_title,data_table)
+    controls_row3= column (text_input, table_title,data_table)
 
-    row1=row(country_selector,state_selector,home_id_selector, granularity_1,text_input, controls_row3, sizing_mode="scale_height")
-    row2=row(date_range_slider)
-    row3=row(plot4,plot5)
-    row4=row(plot3)
+    row1=row(country_selector,state_selector,home_id_selector,controls_row3, sizing_mode="scale_height")
+    row2 = row(granularity_1)
+    row3=row(date_range_slider)
+    row4=row(plot4,plot5)
+    row5=row(plot3)
 
-    layout=column(row1,row2,row3,row4)
+    layout=column(row1,row2,row3,row4,row5)
 
     # Make a tab with the layout
     tab = Panel(child=layout, title='Market Analysis')

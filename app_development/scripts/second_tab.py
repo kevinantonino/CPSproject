@@ -91,10 +91,26 @@ def second_tab_create(filterData):
 
         sumL = loadAgg.cumsum() # Over all of the houses 
         sumS = solarAgg.cumsum()
-        Shat = ( sumS < sumL ) * S + ( sumS > sumL ) * (S * sumL/sumS)
 
-        communitySolarSum = Shat.sum() # green plot share
-        discountShareSum = (S - Shat).sum() # red plot share # S - Shat
+        surplus_agg = (solarAgg - loadAgg) * (solarAgg>loadAgg)  #total surplus of solar energy in the community by timestamp (positive part)
+        deficit_agg = (loadAgg-solarAgg)*(solarAgg<loadAgg)  #total deficit of solar energy in the community by timestamp (positive part)
+
+        sum_deficit = deficit_agg.cumsum()
+        sum_surplus = surplus_agg.cumsum()
+
+        X = (L-S)*(L>S) * (sum_surplus-((sumS>sumL)*(sumS - sumL)))/sum_deficit
+
+
+        Shat = ( S > L ) * L + ( S < L ) * (S + X)
+
+
+        solar_sold_shared = (S-L)*(S>L) / sum_surplus * ((sum_surplus-sum_deficit)*(sum_surplus>sum_deficit))
+
+        communitySolarSum = Shat.sum() # green plot share, consumed solar for one home in the sharing situation
+        discountShareSum = solar_sold_shared.sum() # red plot share # S - Shat   Solar sold to the grid by one home in sharing situation
+
+
+
 
         loadCost = load * pi_u # A $
         solarCost = selfSolarSum * pi_u # B $ 
@@ -104,10 +120,44 @@ def second_tab_create(filterData):
         communitySolarCost = communitySolarSum * pi_u # $
         solarSoldCostShare = discountShareSum * pi_nm # $
 
-        netBillShare = loadCost - communitySolarCost - solarSoldCostShare 
+        # total_solar_sold_values = (S<L)*(S*pi_u) + (S>L)*((sum_surplus<sum_deficit)*S*pi_u + (sum_surplus>sum_deficit)*(S-solar_sold_shared)*pi_u + (solar_sold_shared*pi_nm))
+        total_solar_sold_values = (sum_surplus<sum_deficit)*(sumS*pi_u) + (sum_surplus>sum_deficit)*(((sumS>sumL)*(sumS-sumL))*pi_nm+sumL*pi_u)
+        total_solar_sold_values_sum = total_solar_sold_values.sum()
+        print(total_solar_sold_values)
+        print("_-----------------------------------------------------")
+        print(total_solar_sold_values_sum)
 
-        pi_sns = round((solarCost + solarSoldCost ) * 100/ S.sum(),2)
-        pi_ss = round((communitySolarCost + solarSoldCostShare) * 100 / S.sum(),2)
+
+        total_S = 0
+        total_noshare_solar_value = 0
+        for iter_home in np.unique(sortedData['dataid'].values):
+            # print(iter_home)
+            iter_home_data = sortedData[sortedData['dataid'] == iter_home]
+
+            iter_L = iter_home_data['grid'] + iter_home_data['PV_+_Battery(Discharge)']  # (L-S) + S = L
+            iter_S = iter_home_data['PV_+_Battery(Discharge)']  # S
+
+            one_home_consumed_solar_value = (iter_S<iter_L)* iter_S *pi_u + (iter_S>iter_L)*(iter_L*pi_u + (iter_S-iter_L)*pi_nm)
+
+            one_home_consumed_solar_value_sum = one_home_consumed_solar_value.sum()
+
+            total_S = total_S + iter_S.sum()
+            print("total S:")
+            print(total_S)
+            print(one_home_consumed_solar_value_sum)
+            total_noshare_solar_value = total_noshare_solar_value + one_home_consumed_solar_value_sum
+            print(total_noshare_solar_value)
+
+        print("not shared:")
+        print(total_noshare_solar_value)
+        print("shared:")
+        print(total_solar_sold_values_sum)
+        netBillShare = loadCost - communitySolarCost - solarSoldCostShare
+
+
+
+        pi_sns = round((total_noshare_solar_value) * 100 / total_S,2)
+        pi_ss = round((total_solar_sold_values_sum) * 100 / sumS.sum(),2)
  
         if mode == 1:
             d = {'axis': [0,1,2,3,4,5], 'colors': ['blue','green','red','blue','green','red'],
@@ -222,6 +272,8 @@ def second_tab_create(filterData):
                 pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 2,community = state_selector.value)
         new_src6 = barPlot_data(daterange = daterange_to_plot, house = home_id_to_plot, 
                 pi_u = pi_u_to_plot, pi_nm = pi_nm_to_plot, mode = 3,community = state_selector.value)
+        print(state_selector.value)
+        print(home_id_to_plot)
 
 
         src3.data.update(new_src3.data)

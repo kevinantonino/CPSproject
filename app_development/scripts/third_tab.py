@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
-from bokeh.plotting import figure
+from bokeh.plotting import figure,curdoc
 from bokeh.models import ColumnDataSource, Panel,Label, LabelSet
 from bokeh.layouts import column, row
 from bokeh.models.widgets import CheckboxGroup, Slider,RangeSlider, Tabs, TableColumn, DataTable, RadioGroup,RadioButtonGroup, Dropdown,DateRangeSlider,DateSlider
 from bokeh.layouts import WidgetBox
-from bokeh.models import TextInput
+from bokeh.models import TextInput, Button
 from datetime import date
 from bokeh.models import Legend, LegendItem
 
@@ -13,7 +13,8 @@ from pmdarima import auto_arima
 
 home_to_plot = 5679
 
-global state_dict 
+global state_dict,variable
+variable = 0
 state_dict = {6:'TX', 5:'NY', 4:'Modena', 0:'Bergamo', 1:'Brescia', 2:'Catania', 3:'Mantova'}
 
 def third_tab_create(filterData):
@@ -107,58 +108,67 @@ def third_tab_create(filterData):
 
         return plot1
 
-
     def update(attr, old, new):
-        global home_to_plot,state_dict
-
-        data_selector = data_type_selector.labels[data_type_selector.active] 
-
-        if data_selector == 'Net Load':
-            data_to_plot = 'grid'
-            plot1.yaxis.axis_label  = 'Net Load [kWh]'
         
-        if data_selector == 'Load + Battery(Charging)':
-            data_to_plot = 'Load_+_Battery(Charging)'
-            plot1.yaxis.axis_label  = 'Load [kWh]'
+        button.update(button_type = 'warning',label = 'Loading, please wait')
 
-        if data_selector == "Electric Vehicle Consumption":
-            data_to_plot= 'car1'
-            plot1.yaxis.axis_label  = 'Consumption [kWh]'
-
-        if data_selector == "PV Generation + Battery(Discharge)":
-            data_to_plot = 'PV_+_Battery(Discharge)'
-            plot1.yaxis.axis_label  = 'Generation [kWh]'
-
-        trainDays_to_plot = int(trainDays_input.value)
-
-        new_home_to_plot = state_dict[community_selector.active]
-        print(new_home_to_plot)
-
-        #new_home_to_plot = int(home_id_selector.value) ###
-
-        plot1.title.text = f'{data_selector} forecasting of {new_home_to_plot} for date {date_slider.value}'
-
-        if new_home_to_plot != home_to_plot:
-            startDate = filterData[filterData['state'] == new_home_to_plot]['time'].iloc[0].date() ##change
-            endDate = filterData[filterData['state'] == new_home_to_plot]['time'].iloc[-1].date()
-            middle = startDate + (endDate - startDate)/2
+        def calculate():
+            global home_to_plot,state_dict
             
-            date_slider.start = startDate
-            date_slider.end = endDate
-            date_slider.value = middle          
-            date_to_plot = str(middle)
+            data_selector = data_type_selector.labels[data_type_selector.active] 
 
-        #daterange_raw = list(date_slider.value_as_datetime)
-        #daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
-        
-        date_to_plot = date_slider.value
+            if data_selector == 'Net Load':
+                data_to_plot = 'grid'
+                plot1.yaxis.axis_label  = 'Net Load [kWh]'
+            
+            if data_selector == 'Load + Battery(Charging)':
+                data_to_plot = 'Load_+_Battery(Charging)'
+                plot1.yaxis.axis_label  = 'Load [kWh]'
 
-        new_src1,new_mape1 = arima(date = date_to_plot, state = new_home_to_plot, data = data_to_plot, trainDays = trainDays_to_plot)
-        src1.data.update(new_src1.data)
+            if data_selector == "Electric Vehicle Consumption":
+                data_to_plot= 'car1'
+                plot1.yaxis.axis_label  = 'Consumption [kWh]'
 
-        plot1.legend.title = f'Abs Error = {round(new_mape1,3)}%'
+            if data_selector == "PV Generation + Battery(Discharge)":
+                data_to_plot = 'PV_+_Battery(Discharge)'
+                plot1.yaxis.axis_label  = 'Generation [kWh]'
 
-        home_to_plot = new_home_to_plot
+            trainDays_to_plot = int(trainDays_input.value)
+
+            new_home_to_plot = state_dict[community_selector.active]
+
+            #new_home_to_plot = int(home_id_selector.value) ###
+
+            plot1.title.text = f'{data_selector} forecasting of {new_home_to_plot} for date {date_slider.value}'
+
+            if new_home_to_plot != home_to_plot:
+                startDate = filterData[filterData['state'] == new_home_to_plot]['time'].iloc[0].date() ##change
+                endDate = filterData[filterData['state'] == new_home_to_plot]['time'].iloc[-1].date()
+                middle = startDate + (endDate - startDate)/1.5
+                
+                date_slider.start = startDate
+                date_slider.end = endDate
+                date_slider.value = middle          
+                date_to_plot = str(middle)
+
+                print(startDate,endDate,middle)
+
+            #daterange_raw = list(date_slider.value_as_datetime)
+            #daterange_to_plot = [daterange_raw[0].strftime("%Y-%m-%d"), daterange_raw[1].strftime("%Y-%m-%d")]
+            
+            date_to_plot = date_slider.value
+
+            new_src1,new_mape1 = arima(date = date_to_plot, state = new_home_to_plot, data = data_to_plot, trainDays = trainDays_to_plot)
+            src1.data.update(new_src1.data)
+
+            plot1.legend.title = f'Abs Error = {round(new_mape1,3)}%'
+
+            button.update(button_type = 'success',label = 'Done')
+
+            home_to_plot = new_home_to_plot
+
+        curdoc().add_next_tick_callback(calculate)
+
 
     ## Initialize src and plot
     src1,mape1 = arima(date = '2019-07-20', state = 'NY', data = 'PV_+_Battery(Discharge)', trainDays = 2)
@@ -179,6 +189,10 @@ def third_tab_create(filterData):
             active=0)
     data_type_selector.on_change('active', update)
 
+    ## Loading Status
+
+    button = Button(label="Done", button_type="success")
+
     ## Home Selector
     #home_ids_available = np.unique(filterData['dataid'])
     
@@ -190,9 +204,10 @@ def third_tab_create(filterData):
     ## Agg house selection
     community_selector = RadioGroup(labels=list(np.unique(filterData['state'])),
             active=6,max_width = 200)
+  
     community_selector.on_change('active', update)
     
-    row1 = row(plot1, column(data_type_selector, trainDays_input,community_selector,sizing_mode="scale_width"))
+    row1 = row(plot1, column(data_type_selector, trainDays_input,community_selector,button,sizing_mode="scale_width"))
     row2 = row(date_slider)
 
     ## Layout

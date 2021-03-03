@@ -74,10 +74,10 @@ filterData['time'] = pd.to_datetime(filterData['time'], utc = True)
 # Create each of the tabs
 tab1 = first_tab_create(filterData)
 tab2 = second_tab_create(filterData)
-# tab3 = third_tab_create(filterData)
+tab3 = third_tab_create(filterData)
 
 tabs = Tabs(tabs = [tab1,tab2])
-# tabs = Tabs(tabs = [tab1,tab2,tab3])
+tabs = Tabs(tabs = [tab1,tab2,tab3])
 
 # Put the tabs in the current document for display
 curdoc().add_root(tabs)
